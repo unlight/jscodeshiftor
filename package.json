@@ -1,0 +1,76 @@
+{
+  "name": "jscodeshift-playground",
+  "version": "0.0.0-dev",
+  "license": "MIT",
+  "description": "",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "author": "2020",
+  "keywords": [],
+  "scripts": {
+    "test": "npm run eslint && npm run tscheck && npm run test:cov",
+    "test:p": "ultra test",
+    "test:r": "node -r ts-node/register/transpile-only node_modules/mocha/bin/_mocha src/**/*.spec.ts",
+    "test:cov": "c8 --reporter text --exclude \"**/*.spec.ts\" --exclude \"**/testing/**\"  npm run test:r -- --no-timeouts",
+    "test:w": "npm run test:r -- --watch --watch-files src/**/*.ts",
+    "lint": "npm run eslint && npm run tscheck",
+    "eslint": "node node_modules/eslint/bin/eslint \"src/**/*.{ts,tsx}\"",
+    "eslint:w": "watchexec -w src \"npm run eslint\"",
+    "eslint:fix": "npm run eslint -- --fix",
+    "tscheck": "tsc --noEmit",
+    "tscheck:w": "npm run tscheck -- --watch",
+    "lint:fix": "npm run eslint:fix && npm run lint:doc:fix",
+    "lint:doc": "sh Taskfile remark_run",
+    "lint:doc:fix": "sh Taskfile remark_run --output",
+    "format:src": "prettier src --write",
+    "commit_lint": "sh Taskfile commit_lint",
+    "commit": "cz",
+    "semantic-release": "semantic-release",
+    "dev": "node node_modules/webpack-dev-server/bin/webpack-dev-server",
+    "build": "sh Taskfile build",
+    "bundle": "sh Taskfile bundle",
+    "lint:w": "run-p tscheck:w eslint:w",
+    "test:m": "node node_modules/@stryker-mutator/core/bin/stryker run",
+    "mocha": "node node_modules/mocha/bin/_mocha",
+    "test:d": "ndb -r ts-node/register/transpile-only node_modules/mocha/bin/_mocha --no-timeouts --watch-files src/**/*.ts --watch src/**/*.spec.ts"
+  },
+  "ultra": {
+    "concurrent": [
+      "lint",
+      "test"
+    ]
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-customizable"
+    }
+  },
+  "devDependencies": {
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^15.12.1",
+    "@typescript-eslint/eslint-plugin": "^4.26.1",
+    "@typescript-eslint/parser": "^4.26.1",
+    "eslint": "^7.28.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-import-resolver-node": "^0.3.4",
+    "eslint-plugin-etc": "^1.5.0",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-only-warn": "^1.0.2",
+    "eslint-plugin-prettier": "^3.4.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-regexp": "^0.11.0",
+    "eslint-plugin-simple-import-sort": "^7.0.0",
+    "eslint-plugin-sonarjs": "^0.7.0",
+    "eslint-plugin-sort-class-members": "^1.11.0",
+    "eslint-plugin-total-functions": "^4.7.2",
+    "eslint-plugin-unicorn": "^33.0.1",
+    "eslint-plugin-wix-editor": "^3.3.0",
+    "expect": "^27.0.2",
+    "mocha": "^9.0.0",
+    "prettier": "^2.3.1",
+    "ts-node": "^10.0.0",
+    "tslib": "^2.2.0",
+    "typescript": "^4.3.2",
+    "watchexec-bin": "^1.0.0"
+  }
+}
