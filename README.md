@@ -7,3 +7,4 @@
 -   https://github.com/prisma/codemods/tree/main/transforms
 -   https://github.com/cpojer/js-codemod/tree/master/transforms - with tests [here](https://github.com/cpojer/js-codemod/tree/master/transforms/__tests__)
 -   https://github.com/jhgg/js-transforms - Some documented codemod experiments to help you learn
+-   https://github.com/powens/jscodeshift-examples
