@@ -10,6 +10,7 @@ it('duplicate-object-keys 1', () => {
         var x = {
             [a]: 1,
             a: a,
+            'a': 'a',
             b: b,
             a: aa,
             a: aaa

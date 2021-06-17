@@ -1,5 +1,11 @@
 # jscodeshift-playground
 
+## Test Run
+
+```sh
+jscodeshift -t src/transforms/duplicate-object-keys.ts fixtures
+```
+
 ## Resources
 
 -   https://github.com/sejoker/awesome-jscodeshift
