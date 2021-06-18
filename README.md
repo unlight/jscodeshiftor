@@ -9,6 +9,7 @@ jscodeshift -t src/transforms/duplicate-object-keys.ts fixtures
 ## Resources
 
 -   https://github.com/sejoker/awesome-jscodeshift
+-   https://github.com/topics/jscodeshift
 -   https://github.com/skovhus/jest-codemods/tree/master/src/transformers - with unit tests
 -   https://github.com/prisma/codemods/tree/main/transforms
 -   https://github.com/cpojer/js-codemod/tree/master/transforms - with tests [here](https://github.com/cpojer/js-codemod/tree/master/transforms/__tests__)
