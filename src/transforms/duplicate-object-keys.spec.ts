@@ -11,15 +11,19 @@ it('duplicate-object-keys 1', () => {
             [a]: 1,
             a: a,
             'a': 'a',
+            a() { },
+            get a() { },
             b: b,
             a: aa,
-            a: aaa
+            a: a,
+            z: z
         }`,
     );
     expect(result).toEqual(/* JavaScript */ `
         var x = {
             [a]: 1,
             b: b,
-            a: aaa
+            a: a,
+            z: z
         }`);
 });

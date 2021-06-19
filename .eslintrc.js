@@ -60,6 +60,8 @@ module.exports = {
         'wix-editor/return-boolean': 1,
         'wix-editor/simplify-boolean-expression': 1,
         // unicorn
+        'unicorn/no-array-for-each': 0,
+        'unicorn/no-array-callback-reference': 0,
         'unicorn/prefer-spread': 0,
         'unicorn/catch-error-name': 0,
         'unicorn/prefer-node-protocol': 0,
