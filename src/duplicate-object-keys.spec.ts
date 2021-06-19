@@ -1,7 +1,7 @@
 import expect from 'expect';
 
-import { runPlugin } from '../testing';
 import plugin from './duplicate-object-keys';
+import { runPlugin } from './testing';
 
 it('duplicate-object-keys 1', () => {
     const result = runPlugin(

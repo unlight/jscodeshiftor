@@ -8,7 +8,7 @@
   "author": "2020",
   "keywords": [],
   "scripts": {
-    "test": "npm run eslint && npm run tscheck && npm run test:cov",
+    "test": "npm run eslint && npm run tscheck && npm run test:r",
     "test:p": "ultra test",
     "test:r": "node -r ts-node/register/transpile-only node_modules/mocha/bin/_mocha src/**/*.spec.ts",
     "test:cov": "c8 --reporter text --exclude \"**/*.spec.ts\" --exclude \"**/testing/**\"  npm run test:r -- --no-timeouts",
@@ -48,13 +48,13 @@
   "devDependencies": {
     "@types/jscodeshift": "^0.11.0",
     "@types/mocha": "^8.2.2",
-    "@types/node": "^15.12.2",
+    "@types/node": "^15.12.4",
     "@typescript-eslint/eslint-plugin": "^4.27.0",
     "@typescript-eslint/parser": "^4.27.0",
-    "eslint": "^7.28.0",
+    "eslint": "^7.29.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-import-resolver-node": "^0.3.4",
-    "eslint-plugin-etc": "^1.5.0",
+    "eslint-plugin-etc": "^1.5.2",
     "eslint-plugin-import": "^2.23.4",
     "eslint-plugin-only-warn": "^1.0.2",
     "eslint-plugin-prettier": "^3.4.0",
@@ -68,11 +68,11 @@
     "eslint-plugin-wix-editor": "^3.3.0",
     "expect": "^27.0.2",
     "jscodeshift": "^0.12.0",
-    "mocha": "^9.0.0",
+    "mocha": "^9.0.1",
     "prettier": "^2.3.1",
     "ts-node": "^10.0.0",
     "tslib": "^2.3.0",
-    "typescript": "^4.3.2",
+    "typescript": "^4.3.4",
     "watchexec-bin": "^1.0.0"
   }
 }
