@@ -1,7 +1,7 @@
 import expect from 'expect';
 
 import plugin from './duplicate-object-keys';
-import { runPlugin } from './testing';
+import { code, runPlugin } from './testing';
 
 it('duplicate-object-keys 1', () => {
     const result = runPlugin(
@@ -19,7 +19,7 @@ it('duplicate-object-keys 1', () => {
             z: z
         }`,
     );
-    expect(result).toEqual(/* JavaScript */ `
+    expect(code(result)).toEqual(/* JavaScript */ `
         var x = {
             [a]: 1,
             b: b,

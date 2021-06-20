@@ -1,4 +1,9 @@
 import jscodeshift from 'jscodeshift';
+import { parse, print } from 'recast';
+
+export function code(text: string | void | null | undefined): string {
+    return print(parse(String(text)), { lineTerminator: '\n' }).code;
+}
 
 export function api(): jscodeshift.API {
     return {

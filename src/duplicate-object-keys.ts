@@ -8,9 +8,7 @@ export default <jscodeshift.Transform>function (file, api, options) {
         .forEach(objectExpression => {
             iterateObjectExpression({ j, objectExpression });
         })
-        .toSource({
-            lineTerminator: '\n',
-        });
+        .toSource();
 };
 
 function iterateObjectExpression({
