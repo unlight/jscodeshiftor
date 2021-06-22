@@ -20,28 +20,38 @@ function iterateObjectExpression({
 }) {
     // Find nodes where propert is identifier
     const identifierNodes = (name: string) =>
-        j(objectExpression).find(j.Property, {
-            key: {
-                type: 'Identifier',
-                name,
-            },
-            computed: false,
-        });
+        j(objectExpression)
+            .find(j.Property, {
+                key: {
+                    type: 'Identifier',
+                    name,
+                },
+                computed: false,
+            })
+            .filter(p => p.parent === objectExpression);
     // Literals
     const literalNodes = (name: string) =>
-        j(objectExpression).find(j.Property, {
-            key: {
-                type: 'Literal',
-                value: name,
-            },
-            computed: false,
-        });
+        j(objectExpression)
+            .find(j.Property, {
+                key: {
+                    type: 'Literal',
+                    value: name,
+                },
+                computed: false,
+            })
+            .filter(p => p.parent === objectExpression);
 
     j(objectExpression)
         .find(j.Property)
+        .filter(p => p.parent === objectExpression)
         .filter(p => p.value.computed === false)
         .forEach(property => {
             const identifier = getIdentifierValue(property);
+            // console.log({
+            //     identifier,
+            //     toSource: j(property).toSource(),
+            //     parent: j(property.parent).toSource(),
+            // });
             const count =
                 identifierNodes(identifier).size() + literalNodes(identifier).size();
             if (count > 1) {

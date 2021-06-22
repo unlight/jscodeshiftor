@@ -27,3 +27,27 @@ it('duplicate-object-keys 1', () => {
             z: z
         }`);
 });
+
+it('duplicate-object-keys nested', () => {
+    const result = runPlugin(
+        plugin,
+        /* JavaScript */ `
+        var x = {
+            a: {
+                a: 1
+            },
+            b: {
+                a: 2
+            }
+        }`,
+    );
+    expect(code(result)).toEqual(/* JavaScript */ `
+        var x = {
+            a: {
+                a: 1
+            },
+            b: {
+                a: 2
+            }
+        }`);
+});
