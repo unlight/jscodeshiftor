@@ -2,6 +2,8 @@ import { ok } from 'assert';
 import jscodeshift from 'jscodeshift';
 import { describe, printCode } from './testing';
 
+export const parser = 'acorn';
+
 export default <jscodeshift.Transform>function (file, api, options) {
   const j = api.jscodeshift;
   const root = j(file.source);
@@ -12,9 +14,18 @@ export default <jscodeshift.Transform>function (file, api, options) {
 
   // Find exports
   root.find(j.ExportNamedDeclaration).forEach(path => {
-    const { specifiers, declaration } = path.value;
+    const { specifiers, declaration, comments, source } = path.value;
 
-    if (specifiers) exportSpecifiers.push(...specifiers);
+    // Keep export from
+    if (source) return;
+
+    if (declaration && comments?.length) {
+      if (!declaration?.comments?.length) declaration.comments = [];
+
+      declaration.comments.unshift(...comments);
+    }
+
+    if (specifiers?.length) exportSpecifiers.push(...specifiers);
 
     j(path)
       .find(j.VariableDeclarator)
@@ -23,16 +34,26 @@ export default <jscodeshift.Transform>function (file, api, options) {
         if (path.value.id.type === 'Identifier') {
           exportNames.push(path.value.id.name);
         }
+        if (path.value.id.type === 'ObjectPattern') {
+          path.value.id.properties
+            .filter(p => p.type === 'Property')
+            .forEach(p => {
+              if (p.value.type === 'Identifier') {
+                exportNames.push(p.value.name);
+              }
+            });
+        }
       });
 
-    j(path)
-      .find(j.FunctionDeclaration)
-      .filter(path => path.parent.value === declaration)
-      .forEach(path => {
-        const name = path.value.id?.name;
+    if (declaration?.type === 'ClassDeclaration') {
+      const name = declaration.id?.name;
+      if (name) exportNames.push(name);
+    }
 
-        if (name) exportNames.push(name);
-      });
+    if (declaration?.type === 'FunctionDeclaration') {
+      const name = declaration.id?.name;
+      if (name) exportNames.push(name);
+    }
 
     // Remove export keyword
     path.replace(declaration as any);
@@ -60,6 +81,7 @@ export default <jscodeshift.Transform>function (file, api, options) {
   if (exportNamedDeclaration.specifiers?.length) {
     const program: jscodeshift.Program = root.get().node.program;
 
+    program.body.push('\n' as any);
     program.body.push(exportNamedDeclaration);
   }
 

@@ -1,34 +1,34 @@
 import expect from 'expect';
 import { it, describe } from 'mocha';
 
-import plugin from './bottom-exports';
-import { runPlugin, runTransform } from './testing';
+import plugin, { parser } from './bottom-exports';
+import { runTransform } from './testing';
 
 describe('bottom-exports', () => {
   it('noop ', () => {
-    const result = runPlugin(plugin, `const foo = 1`);
+    const { content } = runTransform(plugin, `const foo = 1`);
 
-    expect(result).toEqual('const foo = 1');
+    expect(content).toEqual('const foo = 1');
   });
 
   it('export const', () => {
-    const result = runPlugin(plugin, `export const foo = 1`);
-    expect(result).toEqual('const foo = 1;\nexport { foo };');
+    const { lines } = runTransform(plugin, `export const foo = 1`);
+    expect(lines).toEqual(['const foo = 1', 'export { foo }']);
   });
 
   it('export var', () => {
-    const result = runPlugin(plugin, `export var v = 1`);
-    expect(result).toEqual('var v = 1;\nexport { v };');
+    const { lines } = runTransform(plugin, `export var v = 1`);
+    expect(lines).toEqual(['var v = 1', 'export { v }']);
   });
 
   it('multiple vars in declaration', () => {
-    const result = runPlugin(plugin, `export const a = 1, b = 2`);
-    expect(result).toEqual('const a = 1, b = 2;\nexport { a, b };');
+    const { lines } = runTransform(plugin, `export const a = 1, b = 2`);
+    expect(lines).toEqual(['const a = 1, b = 2', 'export { a, b }']);
   });
 
   it('single function', () => {
-    const result = runPlugin(plugin, `export function f() { }`);
-    expect(result).toEqual('function f() { }\nexport { f };');
+    const { lines } = runTransform(plugin, `export function f() { }`);
+    expect(lines).toEqual(['function f() { }', 'export { f }']);
   });
 
   it('keep exports', () => {
@@ -42,9 +42,8 @@ describe('bottom-exports', () => {
   });
 
   it('export class', () => {
-    expect(runPlugin(plugin, 'export class A { }')).toEqual(
-      'class A { };\nexport { A };',
-    );
+    const { lines } = runTransform(plugin, 'export class A { }');
+    expect(lines).toEqual(['class A { }', 'export { A }']);
   });
 
   it('combine already declared bottom export', () => {
@@ -62,5 +61,23 @@ describe('bottom-exports', () => {
   it('collect from top and move to bottom', () => {
     const { lines } = runTransform(plugin, 'export { a }; const a = 1;');
     expect(lines).toEqual(['const a = 1', 'export { a }']);
+  });
+
+  it('keep exports from', () => {
+    const { lines } = runTransform(plugin, `export { a } from './a.js'`);
+    expect(lines).toEqual([`export { a } from './a.js'`]);
+  });
+
+  it('exported from object', () => {
+    const { lines } = runTransform(
+      plugin,
+      'const exported = {}; export const { d } = exported',
+      { parser },
+    );
+    expect(lines).toEqual([
+      'const exported = {}',
+      'const { d } = exported',
+      'export { d }',
+    ]);
   });
 });
