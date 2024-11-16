@@ -13,8 +13,10 @@ jscodeshift -t src/transforms/duplicate-object-keys.ts fixtures
 - https://rajasegar.github.io/ast-finder/
 - https://rajasegar.github.io/ast-builder/
 - https://ast-tooling.vercel.app/
+- https://sebastianrosik.github.io/ast-types-dict/
 - https://ast.sxzz.moe/
 - https://codemod.dev/
+- https://source-viz.netlify.app/
 
 ## Resources
 
@@ -36,3 +38,12 @@ jscodeshift -t src/transforms/duplicate-object-keys.ts fixtures
 - https://github.com/rajasegar/jscodeshift-collections
 - https://github.com/rajasegar/jscodeshift-docs
 - https://github.com/obweger/modster
+- https://github.com/RIP21/import-move-codemod
+- https://github.com/knilink/ez-jscodeshift
+- https://crguezl.github.io/jscodeshift-api-docs/index.html
+- https://github.com/jhgg/js-transforms
+
+## Articles
+
+- https://dev.to/arnaudspanneut/how-i-gained-4-months-of-work-on-the-migration-of-a-code-base-with-codemod-2pbn
+- https://www.toptal.com/javascript/write-code-to-rewrite-your-code
