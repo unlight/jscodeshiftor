@@ -1,13 +1,14 @@
 import expect from 'expect';
-import { it } from 'mocha';
+import { it, describe } from 'mocha';
 
 import plugin from './duplicate-object-keys';
 import { runPlugin } from './testing';
 
-it('duplicate-object-keys 1', async () => {
-  const result = await runPlugin(
-    plugin,
-    /* JavaScript */ `
+describe('duplicate-object-keys', () => {
+  it('duplicate-object-keys 1', async () => {
+    const result = await runPlugin(
+      plugin,
+      /* JavaScript */ `
         var x = {
             [a]: 1,
             a: a,
@@ -19,21 +20,21 @@ it('duplicate-object-keys 1', async () => {
             a: a,
             z: z
         }`,
-  );
+    );
 
-  expect(result).toEqual(/* JavaScript */ `
+    expect(result).toEqual(/* JavaScript */ `
         var x = {
             [a]: 1,
             b: b,
             a: a,
             z: z
         }`);
-});
+  });
 
-it('duplicate-object-keys nested', () => {
-  const result = runPlugin(
-    plugin,
-    /* JavaScript */ `
+  it('duplicate-object-keys nested', () => {
+    const result = runPlugin(
+      plugin,
+      /* JavaScript */ `
         var x = {
             a: {
                 a: 1
@@ -42,8 +43,8 @@ it('duplicate-object-keys nested', () => {
                 a: 2
             }
         }`,
-  );
-  expect(result).toEqual(/* JavaScript */ `
+    );
+    expect(result).toEqual(/* JavaScript */ `
         var x = {
             a: {
                 a: 1
@@ -52,9 +53,10 @@ it('duplicate-object-keys nested', () => {
                 a: 2
             }
         }`);
-});
+  });
 
-it('ignore object spread', () => {
-  const result = runPlugin(plugin, `var x = {...(date && { date }) }`);
-  expect(result).toEqual(`var x = {...(date && { date }) }`);
+  it('ignore object spread', () => {
+    const result = runPlugin(plugin, `var x = {...(date && { date }) }`);
+    expect(result).toEqual(`var x = {...(date && { date }) }`);
+  });
 });
