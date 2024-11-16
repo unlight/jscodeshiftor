@@ -32,6 +32,23 @@ type File = {
   source: string;
 };
 
+export function runTransform(
+  transform: jscodeshift.Transform,
+  file: string | File,
+  options = {},
+) {
+  const source = typeof file === 'string' ? file : file.source;
+  const path = typeof file === 'string' ? 'test.js' : file.path;
+
+  const content = transform({ source, path }, api(options), options);
+  const lines = String(content)
+    .split('\n')
+    .filter(Boolean)
+    .map(line => (line.at(-1) === ';' ? line.slice(0, -1) : line));
+
+  return { content, lines };
+}
+
 export function runPlugin(
   plugin: jscodeshift.Transform,
   file: string | File,
@@ -39,7 +56,10 @@ export function runPlugin(
 ) {
   const source = typeof file === 'string' ? file : file.source;
   const path = typeof file === 'string' ? 'test.js' : file.path;
-  return plugin({ source, path }, api(options), options);
+
+  const result = plugin({ source, path }, api(options), options);
+
+  return result;
 }
 
 export function wrapPlugin(plugin: jscodeshift.Transform) {
