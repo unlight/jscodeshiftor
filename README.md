@@ -6,12 +6,33 @@
 jscodeshift -t src/transforms/duplicate-object-keys.ts fixtures
 ```
 
+## Tools
+
+- https://astexplorer.net/
+- https://rajasegar.github.io/jarvis/
+- https://rajasegar.github.io/ast-finder/
+- https://rajasegar.github.io/ast-builder/
+- https://ast-tooling.vercel.app/
+- https://ast.sxzz.moe/
+- https://codemod.dev/
+
 ## Resources
 
--   https://github.com/sejoker/awesome-jscodeshift
--   https://github.com/topics/jscodeshift
--   https://github.com/skovhus/jest-codemods/tree/master/src/transformers - with unit tests
--   https://github.com/prisma/codemods/tree/main/transforms
--   https://github.com/cpojer/js-codemod/tree/master/transforms - with tests [here](https://github.com/cpojer/js-codemod/tree/master/transforms/__tests__)
--   https://github.com/jhgg/js-transforms - Some documented codemod experiments to help you learn
--   https://github.com/powens/jscodeshift-examples
+- https://github.com/topics/jscodeshift
+- https://github.com/topics/codemod
+- https://www.codeshiftcommunity.com/docs/your-first-codemod
+- https://github.com/seokju-na/jscodeshift-utils
+- https://github.com/skovhus/jest-codemods/tree/master/src/transformers - with unit tests
+- https://github.com/prisma/codemods/tree/main/transforms
+- https://github.com/cpojer/js-codemod/tree/master/transforms - with tests [here](https://github.com/cpojer/js-codemod/tree/master/transforms/__tests__)
+- https://github.com/jhgg/js-transforms - Some documented codemod experiments to help you learn
+- https://github.com/powens/jscodeshift-examples
+- https://github.com/chimurai/jscodeshift-typescript-example/
+- https://github.com/sejoker/awesome-jscodeshift
+- https://github.com/JamieMason/codemods
+- https://github.com/JamieMason/codemods/blob/master/transforms/lib/helpers.js
+- https://github.com/reergymerej/jscodeshift-helper
+- https://github.com/hypermod-io/hypermod-community
+- https://github.com/rajasegar/jscodeshift-collections
+- https://github.com/rajasegar/jscodeshift-docs
+- https://github.com/obweger/modster
