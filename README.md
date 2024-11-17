@@ -1,9 +1,14 @@
-# jscodeshift-playground
+# jscodeshiftor
+
+Suggests code modifications and enhancements
+
+- bottom-exports
+- duplicate-object-keys
 
 ## Test Run
 
 ```sh
-jscodeshift -t src/transforms/duplicate-object-keys.ts fixtures
+jscodeshift -t src/transforms/noop.ts fixtures
 ```
 
 ## Tools
