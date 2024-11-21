@@ -80,4 +80,19 @@ describe('bottom-exports', () => {
       'export { d }',
     ]);
   });
+
+  it.only('move export default before', () => {
+    const { lines } = runTransform(
+      plugin,
+      `const a = 1;
+      export default a;
+      export const b = 1`,
+    );
+
+    expect(lines).toHaveLength(4);
+    expect(lines[0]).toEqual('const a = 1');
+    expect(lines[1]).toEqual('const b = 1');
+    expect(lines[2]).toEqual('export default a');
+    expect(lines[3]).toEqual('export { b }');
+  });
 });
