@@ -55,4 +55,16 @@ describe('export default name', () => {
       'export default chicago',
     ]);
   });
+
+  it('already declared', () => {
+    const result = runTransform(plugin, {
+      path: '/usr/app/joo.js',
+      source: `import joo from "joo"; export default function () {}`,
+    });
+    expect(result.lines).toEqual([
+      'import joo from "joo"',
+      'function appJoo() {}',
+      'export default appJoo',
+    ]);
+  });
 });

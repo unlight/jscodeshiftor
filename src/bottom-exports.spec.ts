@@ -81,7 +81,7 @@ describe('bottom-exports', () => {
     ]);
   });
 
-  it.only('move export default before', () => {
+  it('move export default before', () => {
     const { lines } = runTransform(
       plugin,
       `const a = 1;
