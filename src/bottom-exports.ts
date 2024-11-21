@@ -78,15 +78,18 @@ export default <jscodeshift.Transform>function (file, api, options) {
     ...exportNameSpecifiers,
   );
 
+  const exportDefaultDeclaration = root.find(j.ExportDefaultDeclaration);
+
+  const program: jscodeshift.Program = root.get().node.program;
+  program.body.push('\n' as any);
+
+  const exportDefault = exportDefaultDeclaration.nodes();
+
+  exportDefaultDeclaration.remove();
+
+  program.body.push(...exportDefault);
+
   if (exportNamedDeclaration.specifiers?.length) {
-    const program: jscodeshift.Program = root.get().node.program;
-    const exportDefaultDeclaration = root.find(j.ExportDefaultDeclaration);
-    const exportDefault = exportDefaultDeclaration.nodes();
-
-    exportDefaultDeclaration.remove();
-
-    program.body.push('\n' as any);
-    program.body.push(...exportDefault);
     program.body.push(exportNamedDeclaration);
   }
 

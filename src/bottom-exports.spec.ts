@@ -5,10 +5,9 @@ import plugin, { parser } from './bottom-exports';
 import { runTransform } from './testing';
 
 describe('bottom-exports', () => {
-  it('noop ', () => {
-    const { content } = runTransform(plugin, `const foo = 1`);
-
-    expect(content).toEqual('const foo = 1');
+  it('nothing ', () => {
+    const { lines } = runTransform(plugin, `const foo = 1`);
+    expect(lines).toEqual(['const foo = 1']);
   });
 
   it('export const', () => {
@@ -94,5 +93,19 @@ describe('bottom-exports', () => {
     expect(lines[1]).toEqual('const b = 1');
     expect(lines[2]).toEqual('export default a');
     expect(lines[3]).toEqual('export { b }');
+  });
+
+  it('move default to the end', () => {
+    const { lines } = runTransform(
+      plugin,
+      `export default form;
+      function form (p) {};
+      function header(hdr) {};`,
+    );
+    expect(lines).toEqual([
+      'function form (p) {}',
+      'function header(hdr) {}',
+      'export default form',
+    ]);
   });
 });
