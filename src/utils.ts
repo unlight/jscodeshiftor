@@ -1,6 +1,41 @@
-import { JSCodeshift } from 'jscodeshift';
+import { ASTPath, Collection, JSCodeshift } from 'jscodeshift';
 
 // https://github.com/JamieMason/codemods/blob/master/transforms/lib/helpers.js
+
+function isTopLevel(path: ASTPath) {
+  return path.parent.value.type === 'Program';
+}
+
+export function getTopLevelVariables(j: JSCodeshift, collection: Collection) {
+  return collection.find(j.VariableDeclaration).filter(isTopLevel);
+}
+
+export function getTopLevelVariableNames(
+  j: JSCodeshift,
+  collection: Collection,
+) {
+  const identifiers: string[] = [];
+
+  getTopLevelVariables(j, collection).forEach(path => {
+    const variableDeclaration = path.value;
+
+    variableDeclaration.declarations.forEach(declaration => {
+      if (declaration.type === 'VariableDeclarator') {
+        if (declaration.id.type === 'Identifier') {
+          identifiers.push(declaration.id.name);
+        }
+        if (declaration.id.type === 'ObjectPattern') {
+          declaration.id.properties.forEach(p => {
+            if (p.type === 'Property' && p.value.type === 'Identifier')
+              identifiers.push(p.value.name);
+          });
+        }
+      }
+    });
+  });
+
+  return identifiers;
+}
 
 export const extendApi = (j: JSCodeshift) => {
   const isTopLevel = path => path.parent.value.type === 'Program';
@@ -9,7 +44,7 @@ export const extendApi = (j: JSCodeshift) => {
   if (dummy.getExportsByClassName) return;
 
   j.registerMethods({
-    getExportsByClassName(this: JSCodeshift, className) {
+    getExportsByClassName(this: Collection, className) {
       return this.find(j.ExportNamedDeclaration, {
         declaration: {
           type: 'ClassDeclaration',
@@ -17,7 +52,7 @@ export const extendApi = (j: JSCodeshift) => {
         },
       });
     },
-    getExportsByFunctionName(this: JSCodeshift, className) {
+    getExportsByFunctionName(this: Collection, className) {
       return this.find(j.ExportNamedDeclaration, {
         declaration: {
           type: 'FunctionDeclaration',
@@ -25,7 +60,7 @@ export const extendApi = (j: JSCodeshift) => {
         },
       });
     },
-    getExportsByVarName(this: JSCodeshift, varName) {
+    getExportsByVarName(this: Collection, varName) {
       return this.find(j.ExportNamedDeclaration, {
         declaration: {
           type: 'VariableDeclaration',
@@ -38,19 +73,19 @@ export const extendApi = (j: JSCodeshift) => {
         },
       });
     },
-    getImportsByPackageName(this: JSCodeshift, packageName) {
+    getImportsByPackageName(this: Collection, packageName) {
       return this.find(j.ImportDeclaration, {
         source: {
           value: packageName,
         },
       });
     },
-    getNamedExportedClasses(this: JSCodeshift) {
+    getNamedExportedClasses(this: Collection) {
       return this.find(j.ExportNamedDeclaration, {
         declaration: { type: 'ClassDeclaration', id: { type: 'Identifier' } },
       });
     },
-    getNamedExportedFunctions(this: JSCodeshift) {
+    getNamedExportedFunctions(this: Collection) {
       return this.find(j.ExportNamedDeclaration, {
         declaration: {
           type: 'FunctionDeclaration',
@@ -58,31 +93,28 @@ export const extendApi = (j: JSCodeshift) => {
         },
       });
     },
-    getNamedExportedVars(this: JSCodeshift) {
+    getNamedExportedVars(this: Collection) {
       return this.find(j.ExportNamedDeclaration, {
         declaration: { type: 'VariableDeclaration' },
       });
     },
-    getTopLevelClasses(this: JSCodeshift) {
+    getTopLevelClasses(this: Collection) {
       return this.find(j.ClassDeclaration).filter(isTopLevel);
     },
-    getTopLevelFunctions(this: JSCodeshift) {
+    getTopLevelFunctions(this: Collection) {
       return this.find(j.FunctionDeclaration).filter(isTopLevel);
     },
-    getTopLevelVariables(this: JSCodeshift) {
-      return this.find(j.VariableDeclaration).filter(isTopLevel);
-    },
-    getTopLevelClassByName(this: JSCodeshift, className) {
+    getTopLevelClassByName(this: Collection, className) {
       return this.find(j.ClassDeclaration, {
         id: { type: 'Identifier', name: className },
       }).filter(isTopLevel);
     },
-    getTopLevelFunctionByName(this: JSCodeshift, className) {
+    getTopLevelFunctionByName(this: Collection, className) {
       return this.find(j.FunctionDeclaration, {
         id: { type: 'Identifier', name: className },
       }).filter(isTopLevel);
     },
-    getTopLevelVariableByName(this: JSCodeshift, varName) {
+    getTopLevelVariableByName(this: Collection, varName) {
       return this.find(j.VariableDeclaration, {
         declarations: [
           {
@@ -92,35 +124,35 @@ export const extendApi = (j: JSCodeshift) => {
         ],
       }).filter(isTopLevel);
     },
-    getImportedVarNames(this: JSCodeshift) {
+    getImportedVarNames(this: Collection) {
       const identifiers: any[] = [];
       this.find(j.ImportDeclaration).forEach(path => {
         const importDeclaration = path.value;
-        importDeclaration.specifiers.forEach(specifier => {
-          identifiers.push(specifier.local.name);
+        importDeclaration.specifiers?.forEach(specifier => {
+          identifiers.push(specifier.local?.name);
         });
       });
       return identifiers;
     },
-    getNamedExportedClassNames(this: JSCodeshift) {
+    getNamedExportedClassNames(this: Collection) {
       const identifiers: any[] = [];
-      this.getNamedExportedClasses().forEach(path => {
+      this['getNamedExportedClasses']().forEach(path => {
         const exportNamedDeclaration = path.value;
         identifiers.push(exportNamedDeclaration.declaration.id.name);
       });
       return identifiers;
     },
-    getNamedExportedFunctionNames(this: JSCodeshift) {
+    getNamedExportedFunctionNames(this: Collection) {
       const identifiers: any[] = [];
-      this.getNamedExportedFunctions().forEach(path => {
+      this['getNamedExportedFunctions']().forEach(path => {
         const exportNamedDeclaration = path.value;
         identifiers.push(exportNamedDeclaration.declaration.id.name);
       });
       return identifiers;
     },
-    getNamedExportedVarNames(this: JSCodeshift) {
+    getNamedExportedVarNames(this: Collection) {
       const identifiers: any[] = [];
-      this.getNamedExportedVars().forEach(path => {
+      this['getNamedExportedVars']().forEach(path => {
         const exportNamedDeclaration = path.value;
         exportNamedDeclaration.declaration.declarations.forEach(declaration => {
           identifiers.push(declaration.id.name);
@@ -128,41 +160,34 @@ export const extendApi = (j: JSCodeshift) => {
       });
       return identifiers;
     },
-    getTopLevelClassNames(this: JSCodeshift) {
+    getTopLevelClassNames(this: Collection) {
       const identifiers: any[] = [];
-      this.getTopLevelClasses().forEach(path => {
+      this['getTopLevelClasses']().forEach(path => {
         const classDeclaration = path.value;
         identifiers.push(classDeclaration.id.name);
       });
       return identifiers;
     },
-    getTopLevelFunctionNames(this: JSCodeshift) {
+    getTopLevelFunctionNames(this: Collection) {
       const identifiers: any[] = [];
-      this.getTopLevelFunctions().forEach(path => {
+      this['getTopLevelFunctions']().forEach(path => {
         const functionDeclaration = path.value;
         identifiers.push(functionDeclaration.id.name);
       });
       return identifiers;
     },
-    getTopLevelVariableNames(this: JSCodeshift) {
-      const identifiers: any[] = [];
-      this.getTopLevelVariables().forEach(path => {
-        const variableDeclaration = path.value;
-        variableDeclaration.declarations.forEach(declaration => {
-          identifiers.push(declaration.id.name);
-        });
-      });
-      return identifiers;
+    getTopLevelVariableNames(this: Collection) {
+      return getTopLevelVariableNames(j, this);
     },
-    getTopLevelVarNames(this: JSCodeshift) {
+    getTopLevelVarNames(this: Collection) {
       return [].concat(
-        this.getImportedVarNames(),
-        this.getNamedExportedClassNames(),
-        this.getNamedExportedFunctionNames(),
-        this.getNamedExportedVarNames(),
-        this.getTopLevelClassNames(),
-        this.getTopLevelFunctionNames(),
-        this.getTopLevelVariableNames(),
+        this['getImportedVarNames'](),
+        this['getNamedExportedClassNames'](),
+        this['getNamedExportedFunctionNames'](),
+        this['getNamedExportedVarNames'](),
+        this['getTopLevelClassNames'](),
+        this['getTopLevelFunctionNames'](),
+        this['getTopLevelVariableNames'](),
       );
     },
     exportClass(path) {

@@ -13,7 +13,7 @@ export default <jscodeshift.Transform>function (file, api, options) {
     .join('.')!;
   nameParts = nameParts.slice(0, -1).concat(namify(fileName));
   const getDefaultUniqueName = () => {
-    for (let index = 1; index < nameParts.length; index++) {
+    for (let index = 1; index <= nameParts.length; index++) {
       const candidateName = namify(nameParts.slice(-index).join(' '));
       if (!topLevelVars.includes(candidateName)) return candidateName;
     }
