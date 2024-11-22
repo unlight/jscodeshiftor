@@ -44,9 +44,10 @@ export default <jscodeshift.Transform>function (file, api, options) {
       if (!declaration.id) {
         declaration.id = j.identifier(getDefaultUniqueName());
       }
+      const name = declaration.id.name;
 
       path.replace(declaration);
-      path.insertAfter(defaultDeclaration());
+      path.insertAfter(defaultDeclaration(name));
     }
 
     if (

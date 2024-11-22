@@ -70,4 +70,10 @@ describe('export default name', () => {
       'export default usrAppJoo',
     ]);
   });
+
+  it('reuse default with name', () => {
+    const result = runTransform(plugin, `export default class Sheet { }`);
+
+    expect(result.lines).toEqual(['class Sheet { }', 'export default Sheet']);
+  });
 });
