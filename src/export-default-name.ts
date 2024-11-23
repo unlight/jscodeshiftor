@@ -1,7 +1,7 @@
 import jscodeshift from 'jscodeshift';
 import namify from 'namify';
 import { prettyPrint, print, printCode } from './testing';
-import { extendApi } from './utils';
+import { getTopLevelVarNames } from './utils';
 
 export default <jscodeshift.Transform>function (file, api, options) {
   const j = api.jscodeshift;
@@ -30,9 +30,7 @@ export default <jscodeshift.Transform>function (file, api, options) {
     return j.exportDefaultDeclaration(j.identifier(name));
   };
 
-  extendApi(j);
-
-  const topLevelVars = root['getTopLevelVarNames']();
+  const topLevelVars = getTopLevelVarNames(j, root);
 
   root.find(j.ExportDefaultDeclaration).forEach(path => {
     const declaration = path.node.declaration;
