@@ -108,4 +108,14 @@ describe('bottom-exports', () => {
       'export default form',
     ]);
   });
+
+  it('export default and other witout line break', () => {
+    const { content } = runTransform(
+      plugin,
+      'export default form;\n\nfunction form (p) {};\n\nexport const x = 1',
+    );
+
+    const lines = String(content).split('\n').slice(-2);
+    expect(lines).toEqual(['export default form;', 'export { x };']);
+  });
 });
