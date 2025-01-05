@@ -95,6 +95,6 @@ export default <jscodeshift.Transform>function (file, api, options) {
 
   return root.toSource({
     lineTerminator: '\n',
-    reuseWhitespace: false,
+    // reuseWhitespace: false,
   });
 };
