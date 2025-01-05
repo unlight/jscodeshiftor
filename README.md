@@ -2,8 +2,10 @@
 
 Suggests code modifications and enhancements
 
-- bottom-exports
-- duplicate-object-keys
+- bottom-exports - Move exports to the end of the file
+- export-default-name - Give default export name based on filename
+- duplicate-object-keys - Remove duplicated keys in object
+- noop - Do nothing
 
 ## Test Run
 
