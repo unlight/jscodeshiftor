@@ -50,7 +50,8 @@ export default <jscodeshift.Transform>function (file, api, options) {
 
     if (
       declaration.type === 'Literal' ||
-      declaration.type === 'ArrowFunctionExpression'
+      declaration.type === 'ArrowFunctionExpression' ||
+      declaration.type === 'CallExpression'
     ) {
       path.replace(
         j.variableDeclaration('const', [

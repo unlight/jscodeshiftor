@@ -76,4 +76,17 @@ describe('export default name', () => {
 
     expect(result.lines).toEqual(['class Sheet { }', 'export default Sheet']);
   });
+
+  it('default call expression', () => {
+    const result = runTransform(plugin, {
+      path: '/usr/app/a.js',
+      source: 'export default registry(); const a = 1;',
+    });
+
+    expect(result.lines).toEqual([
+      'const appA = registry()',
+      'export default appA',
+      'const a = 1',
+    ]);
+  });
 });
