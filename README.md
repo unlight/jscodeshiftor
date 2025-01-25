@@ -2,10 +2,11 @@
 
 Suggests code modifications and enhancements
 
-- bottom-exports - Move exports to the end of the file
-- export-default-name - Give default export name based on filename
-- duplicate-object-keys - Remove duplicated keys in object
-- noop - Do nothing
+- `bottom-exports` - Move exports to the end of the file
+- `export-default-name` - Give default export name based on filename
+- `duplicate-object-keys` - Remove duplicated keys in object
+- `noop` - Do nothing
+- `use-strict` - Add 'use strict' directive for commonjs modules
 
 ## Test Run
 
