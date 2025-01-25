@@ -1,0 +1,27 @@
+name: 'Continuous integration'
+on:
+  - push
+  - pull_request
+
+jobs:
+  test:
+    name: 'Test'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v3
+      - name: 'Setup node'
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+      - name: 'Install depependencies'
+        run: npm install --force
+      - name: 'ESLint'
+        run: |
+          npm run eslint
+      - name: 'TS Check'
+        run: |
+          npm run tscheck
+      - name: 'Unit tests'
+        run: |
+          npm run test:r
