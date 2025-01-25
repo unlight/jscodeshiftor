@@ -89,4 +89,56 @@ describe('export default name', () => {
       'const a = 1',
     ]);
   });
+
+  it('keep comments function', () => {
+    const result = runTransform(plugin, {
+      path: '/usr/app/fu.js',
+      source: `/** comment */
+      export default function() {}`,
+    });
+    expect(result.lines).toEqual([
+      '/** comment */',
+      'function fu() {}',
+      'export default fu',
+    ]);
+  });
+
+  it('keep comments class', () => {
+    const result = runTransform(plugin, {
+      path: '/usr/app/kl.js',
+      source: `/** comment */
+      export default class {}`,
+    });
+    expect(result.lines).toEqual([
+      '/** comment */',
+      'class kl {}',
+      'export default kl',
+    ]);
+  });
+
+  it('keep comments literals', () => {
+    const result = runTransform(plugin, {
+      path: '/usr/app/v.js',
+      source: `/** comment */
+      export default 1`,
+    });
+    expect(result.lines).toEqual([
+      '/** comment */',
+      'const v = 1',
+      'export default v',
+    ]);
+  });
+
+  it('keep comments assignment expression', () => {
+    const result = runTransform(plugin, {
+      path: '/usr/app/v.js',
+      source: `/** comment */
+      export default x()`,
+    });
+    expect(result.lines).toEqual([
+      '/** comment */',
+      'const v = x()',
+      'export default v',
+    ]);
+  });
 });

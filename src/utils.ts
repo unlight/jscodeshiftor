@@ -332,3 +332,8 @@ export function exportDefaultAsNamed(j: JSCodeshift, path, name) {
 export function exportVarNameAsDefault(j: JSCodeshift, name) {
   return j.exportDefaultDeclaration(j.identifier(name));
 }
+
+export function withComments(to, from) {
+  to.comments = from.comments;
+  return to;
+}

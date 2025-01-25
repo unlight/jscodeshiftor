@@ -1,7 +1,7 @@
 import jscodeshift from 'jscodeshift';
 import namify from 'namify';
 import { prettyPrint, print, printCode } from './testing';
-import { getTopLevelVarNames } from './utils';
+import { getTopLevelVarNames, withComments } from './utils';
 
 export default <jscodeshift.Transform>function (file, api, options) {
   const j = api.jscodeshift;
@@ -33,7 +33,8 @@ export default <jscodeshift.Transform>function (file, api, options) {
   const topLevelVars = getTopLevelVarNames(j, root);
 
   root.find(j.ExportDefaultDeclaration).forEach(path => {
-    const declaration = path.node.declaration;
+    const { node } = path;
+    const { declaration } = node;
 
     if (
       declaration.type === 'FunctionDeclaration' ||
@@ -43,6 +44,7 @@ export default <jscodeshift.Transform>function (file, api, options) {
         declaration.id = j.identifier(getDefaultUniqueName());
       }
       const name = declaration.id.name;
+      withComments(declaration, node);
 
       path.replace(declaration);
       path.insertAfter(defaultDeclaration(name));
@@ -54,12 +56,15 @@ export default <jscodeshift.Transform>function (file, api, options) {
       declaration.type === 'CallExpression'
     ) {
       path.replace(
-        j.variableDeclaration('const', [
-          j.variableDeclarator(
-            j.identifier(getDefaultUniqueName()),
-            declaration,
-          ),
-        ]),
+        withComments(
+          j.variableDeclaration('const', [
+            j.variableDeclarator(
+              j.identifier(getDefaultUniqueName()),
+              declaration,
+            ),
+          ]),
+          node,
+        ),
       );
 
       path.insertAfter(defaultDeclaration());
@@ -70,9 +75,12 @@ export default <jscodeshift.Transform>function (file, api, options) {
       declaration.left.type === 'Identifier'
     ) {
       path.replace(
-        j.variableDeclaration('const', [
-          j.variableDeclarator(declaration.left, declaration.right),
-        ]),
+        withComments(
+          j.variableDeclaration('const', [
+            j.variableDeclarator(declaration.left, declaration.right),
+          ]),
+          node,
+        ),
       );
 
       path.insertAfter(defaultDeclaration(declaration.left.name));
