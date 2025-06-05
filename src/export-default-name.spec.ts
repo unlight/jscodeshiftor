@@ -5,26 +5,26 @@ import plugin from './export-default-name';
 import { runTransform } from './testing';
 
 describe('export default name', () => {
-  it('no default export', () => {
-    const result = runTransform(plugin, `export const foo = 1`);
+  it('no default export', async () => {
+    const result = await runTransform(plugin, `export const foo = 1`);
     expect(result.content).toEqual('export const foo = 1');
   });
 
-  it('take name from file', () => {
-    const result = runTransform(plugin, {
+  it('take name from file', async () => {
+    const result = await runTransform(plugin, {
       path: '/usr/app/homie.js',
       source: 'export default 1',
     });
     expect(result.lines).toEqual(['const homie = 1', 'export default homie']);
   });
 
-  it('default assigment', () => {
-    const result = runTransform(plugin, `export default foo = 1`);
+  it('default assigment', async () => {
+    const result = await runTransform(plugin, `export default foo = 1`);
     expect(result.lines).toEqual(['const foo = 1', 'export default foo']);
   });
 
-  it('file reserved word', () => {
-    const result = runTransform(plugin, {
+  it('file reserved word', async () => {
+    const result = await runTransform(plugin, {
       path: '/usr/app/import.js',
       source: 'export default () => {}',
     });
@@ -34,8 +34,8 @@ describe('export default name', () => {
     ]);
   });
 
-  it('anonymous function ', () => {
-    const result = runTransform(plugin, {
+  it('anonymous function ', async () => {
+    const result = await runTransform(plugin, {
       path: '/usr/app/moscow.js',
       source: 'export default function(){}',
     });
@@ -45,8 +45,8 @@ describe('export default name', () => {
     ]);
   });
 
-  it('anonymous class ', () => {
-    const result = runTransform(plugin, {
+  it('anonymous class ', async () => {
+    const result = await runTransform(plugin, {
       path: '/usr/app/chicago.js',
       source: 'export default class{}',
     });
@@ -56,8 +56,8 @@ describe('export default name', () => {
     ]);
   });
 
-  it('already declared', () => {
-    const result = runTransform(plugin, {
+  it('already declared', async () => {
+    const result = await runTransform(plugin, {
       path: '/usr/app/joo.js',
       source: `import joo from "joo";
       const { appJoo } = shared;
@@ -71,14 +71,14 @@ describe('export default name', () => {
     ]);
   });
 
-  it('reuse default with name', () => {
-    const result = runTransform(plugin, `export default class Sheet { }`);
+  it('reuse default with name', async () => {
+    const result = await runTransform(plugin, `export default class Sheet { }`);
 
     expect(result.lines).toEqual(['class Sheet { }', 'export default Sheet']);
   });
 
-  it('default call expression', () => {
-    const result = runTransform(plugin, {
+  it('default call expression', async () => {
+    const result = await runTransform(plugin, {
       path: '/usr/app/a.js',
       source: 'export default registry(); const a = 1;',
     });
@@ -90,8 +90,8 @@ describe('export default name', () => {
     ]);
   });
 
-  it('keep comments function', () => {
-    const result = runTransform(plugin, {
+  it('keep comments function', async () => {
+    const result = await runTransform(plugin, {
       path: '/usr/app/fu.js',
       source: `/** comment */
       export default function() {}`,
@@ -103,8 +103,8 @@ describe('export default name', () => {
     ]);
   });
 
-  it('keep comments class', () => {
-    const result = runTransform(plugin, {
+  it('keep comments class', async () => {
+    const result = await runTransform(plugin, {
       path: '/usr/app/kl.js',
       source: `/** comment */
       export default class {}`,
@@ -116,8 +116,8 @@ describe('export default name', () => {
     ]);
   });
 
-  it('keep comments literals', () => {
-    const result = runTransform(plugin, {
+  it('keep comments literals', async () => {
+    const result = await runTransform(plugin, {
       path: '/usr/app/v.js',
       source: `/** comment */
       export default 1`,
@@ -129,8 +129,8 @@ describe('export default name', () => {
     ]);
   });
 
-  it('keep comments assignment expression', () => {
-    const result = runTransform(plugin, {
+  it('keep comments assignment expression', async () => {
+    const result = await runTransform(plugin, {
       path: '/usr/app/v.js',
       source: `/** comment */
       export default x()`,

@@ -32,7 +32,7 @@ type File = {
   source: string;
 };
 
-export function runTransform(
+export async function runTransform(
   transform: jscodeshift.Transform,
   file: string | File,
   options = {},
@@ -40,7 +40,7 @@ export function runTransform(
   const source = typeof file === 'string' ? file : file.source;
   const path = typeof file === 'string' ? 'test.js' : file.path;
 
-  const content = transform({ source, path }, api(options), options);
+  const content = await transform({ source, path }, api(options), options);
   const lines = String(content)
     .split('\n')
     .filter(Boolean)

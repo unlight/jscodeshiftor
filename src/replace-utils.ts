@@ -38,7 +38,8 @@ export default <jscodeshift.Transform>function (file, api, options) {
         const name =
           variableDeclarator.id?.type === 'Identifier' &&
           variableDeclarator.id.name;
-        assert.ok(name);
+
+        if (!name) return;
 
         const importNames: Record<string, string> = findImports({
           name,
