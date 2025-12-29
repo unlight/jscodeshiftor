@@ -26,7 +26,7 @@ export default defineConfig(
       sourceType: 'module',
     },
     rules: {
-      'max-lines': [1, { max: 300 }],
+      'max-lines': [1, { max: 400 }],
       'max-params': [1, { max: 3 }],
       'no-unneeded-ternary': [1],
     },
@@ -41,6 +41,7 @@ export default defineConfig(
       'unicorn/no-array-callback-reference': 0,
       'unicorn/no-array-for-each': 0,
       'unicorn/no-array-method-this-argument': 0,
+      'unicorn/no-null': 0,
       'unicorn/prevent-abbreviations': 0,
     },
   },

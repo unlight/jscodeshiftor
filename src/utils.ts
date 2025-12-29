@@ -160,7 +160,7 @@ export function getTopLevelFunctions(j: JSCodeshift, collection: Collection) {
 export function getTopLevelClassByName(
   j: JSCodeshift,
   collection: Collection,
-  className,
+  className: string,
 ) {
   return collection
     .find(j.ClassDeclaration, {
@@ -172,7 +172,7 @@ export function getTopLevelClassByName(
 export function getTopLevelFunctionByName(
   j: JSCodeshift,
   collection: Collection,
-  className,
+  className: string,
 ) {
   return collection
     .find(j.FunctionDeclaration, {
@@ -184,7 +184,7 @@ export function getTopLevelFunctionByName(
 export function getTopLevelVariableByName(
   j: JSCodeshift,
   collection: Collection,
-  variableName,
+  variableName: string,
 ) {
   return collection
     .find(j.VariableDeclaration, {
@@ -255,19 +255,20 @@ export function getTopLevelFunctionNames(
 }
 
 export function getTopLevelVarNames(j: JSCodeshift, collection: Collection) {
-  return ([] as string[]).concat(
-    getImportedVarNames(j, collection),
-    getNamedExportedClassNames(j, collection),
-    getNamedExportedFunctionNames(j, collection),
-    getNamedExportedVarNames(j, collection),
-    getTopLevelClassNames(j, collection),
-    getTopLevelFunctionNames(j, collection),
-    getTopLevelVariableNames(j, collection),
-  );
+  return [
+    ...getImportedVarNames(j, collection),
+    ...getNamedExportedClassNames(j, collection),
+    ...getNamedExportedFunctionNames(j, collection),
+    ...getNamedExportedVarNames(j, collection),
+    ...getTopLevelClassNames(j, collection),
+    ...getTopLevelFunctionNames(j, collection),
+    ...getTopLevelVariableNames(j, collection),
+  ];
 }
 
-export function exportClass(j: JSCodeshift, path) {
+export function exportClass(j: JSCodeshift, path: any) {
   const classDeclaration = path.value;
+
   return j.exportNamedDeclaration(
     j.classDeclaration(
       j.identifier(classDeclaration.id.name),
