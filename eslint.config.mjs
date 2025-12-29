@@ -1,42 +1,42 @@
 import 'eslint-plugin-only-warn';
 
-import globals from 'globals';
 import pluginJs from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import { globalIgnores, defineConfig } from 'eslint/config';
+import * as importx from 'eslint-plugin-import-x';
+import perfectionist from 'eslint-plugin-perfectionist';
 import prettier from 'eslint-plugin-prettier/recommended';
-import * as unicorn from 'eslint-plugin-unicorn';
+import unicorn from 'eslint-plugin-unicorn';
+import globals from 'globals';
+import * as tseslint from 'typescript-eslint';
 
-/** @type {import('eslint').Linter.Config} */
-export default [
+export default defineConfig(
   pluginJs.configs.recommended,
-  // ...tseslint.configs.recommended,
-  // ...tseslint.configs.recommendedTypeChecked,
+  tseslint.configs.recommended,
+  tseslint.configs.recommendedTypeChecked,
+  unicorn.configs.recommended,
   prettier,
+  globalIgnores(['dist/**', 'coverage/**', '@generated/**']),
   {
-    ignores: [
-      'dist/',
-      'coverage/',
-      '@generated/**',
-      '*.config.[cm]js',
-      '.*rc.js',
-    ],
     languageOptions: {
+      ecmaVersion: 'latest',
       globals: globals.node,
       parserOptions: {
-        project: ['./tsconfig.json'],
-        warnOnUnsupportedTypeScriptVersion: false,
-        tsconfigRootDir: import.meta.dirname,
+        projectService: true,
       },
+      sourceType: 'module',
     },
     rules: {
       'max-lines': [1, { max: 300 }],
-      'max-params': [1, { max: 5 }],
+      'max-params': [1, { max: 3 }],
       'no-unneeded-ternary': [1],
     },
+    settings: {
+      node: {
+        version: '>=24',
+      },
+    },
   },
-
   {
-    ...unicorn.configs['flat/recommended'],
     rules: {
       'unicorn/prevent-abbreviations': [
         'warn',
@@ -49,10 +49,67 @@ export default [
     },
   },
   {
+    extends: [importx.flatConfigs.recommended, importx.flatConfigs.typescript],
+    rules: {
+      'import-x/order': [
+        'warn',
+        {
+          alphabetize: {
+            caseInsensitive: false,
+            order: 'asc',
+            orderImportKind: 'asc',
+          },
+          groups: [
+            'builtin', // Node.js built-in modules (e.g., `fs`)
+            'external', // Packages from `node_modules`
+            'internal', // Absolute imports (via path aliases)
+            ['parent', 'sibling', 'index'], // Relative imports
+            'object', // Type imports (if using TypeScript)
+            'type', // Side-effect imports
+          ],
+          'newlines-between': 'always', // Add newlines between groups
+          pathGroups: [
+            {
+              // The predefined group this PathGroup is defined in relation to
+              group: 'external',
+              // Minimatch pattern used to match against specifiers
+              pattern: '@/**',
+              // How matching imports will be positioned relative to "group"
+              position: 'after',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    plugins: {
+      perfectionist,
+    },
+    rules: {
+      'perfectionist/sort-objects': [
+        'warn',
+        {
+          order: 'asc',
+          type: 'natural',
+        },
+      ],
+    },
+  },
+  {
+    extends: [tseslint.configs.disableTypeChecked],
+    files: ['*.config.mjs', '*.config.mts'],
+  },
+  {
     files: ['**/*.spec.ts', '**/*.e2e-spec.ts'],
     rules: {
+      '@typescript-eslint/camelcase': 0,
+      '@typescript-eslint/no-explicit-any': 0,
+      '@typescript-eslint/no-floating-promises': 0,
+      '@typescript-eslint/no-non-null-assertion': 0,
       'consistent-return': 0,
+      'import/max-dependencies': 0,
       'max-lines': 0,
     },
   },
-];
+);

@@ -9,11 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v3
+        uses: actions/checkout@master
       - name: 'Setup node'
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@master
         with:
-          node-version: 22
+          node-version: 24
       - name: 'Install depependencies'
         run: npm install --force
       - name: 'ESLint'
