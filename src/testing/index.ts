@@ -1,8 +1,5 @@
 import jscodeshift from 'jscodeshift';
-import { print, prettyPrint } from 'recast';
-import { describe } from 'jscodeshift-helper';
-
-export { print, prettyPrint, describe };
+import { print } from 'recast';
 
 export function printCode(...args: any[]) {
   args.forEach(arg => console.log(code(arg)));
@@ -20,10 +17,10 @@ export function api(options): jscodeshift.API {
   }
 
   return {
-    jscodeshift: j,
     j,
-    stats: () => {},
+    jscodeshift: j,
     report: () => {},
+    stats: () => {},
   };
 }
 
@@ -40,7 +37,7 @@ export async function runTransform(
   const source = typeof file === 'string' ? file : file.source;
   const path = typeof file === 'string' ? 'test.js' : file.path;
 
-  const content = await transform({ source, path }, api(options), options);
+  const content = await transform({ path, source }, api(options), options);
   const lines = String(content)
     .split('\n')
     .filter(Boolean)
@@ -57,7 +54,7 @@ export function runPlugin(
   const source = typeof file === 'string' ? file : file.source;
   const path = typeof file === 'string' ? 'test.js' : file.path;
 
-  const result = plugin({ source, path }, api(options), options);
+  const result = plugin({ path, source }, api(options), options);
 
   return result;
 }
@@ -66,3 +63,6 @@ export function wrapPlugin(plugin: jscodeshift.Transform) {
   return (source: string | File, options = {}) =>
     runPlugin(plugin, source, options) || null;
 }
+
+export { print, prettyPrint } from 'recast';
+export { describe } from 'jscodeshift-helper';

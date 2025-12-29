@@ -1,5 +1,6 @@
 import jscodeshift from 'jscodeshift';
 import namify from 'namify';
+
 import { prettyPrint, print, printCode } from './testing';
 import { getTopLevelVarNames, withComments } from './utils';
 
@@ -7,10 +8,7 @@ export default <jscodeshift.Transform>function (file, api, options) {
   const j = api.jscodeshift;
   const root = j(file.source);
   let nameParts = file.path.replaceAll('\\', '/').split('/').filter(Boolean);
-  const fileName = nameParts[nameParts.length - 1]
-    ?.split('.')
-    .slice(0, -1)
-    .join('.')!;
+  const fileName = nameParts.at(-1)?.split('.').slice(0, -1).join('.')!;
   nameParts = nameParts.slice(0, -1).concat(namify(fileName));
   const getDefaultUniqueName = () => {
     for (let index = 1; index <= nameParts.length; index++) {
@@ -32,7 +30,7 @@ export default <jscodeshift.Transform>function (file, api, options) {
 
   const topLevelVars = getTopLevelVarNames(j, root);
 
-  root.find(j.ExportDefaultDeclaration).forEach(path => {
+  for (const path of root.find(j.ExportDefaultDeclaration).paths()) {
     const { node } = path;
     const { declaration } = node;
 
@@ -47,7 +45,7 @@ export default <jscodeshift.Transform>function (file, api, options) {
       withComments(declaration, node);
 
       path.replace(declaration);
-      path.insertAfter(defaultDeclaration(name));
+      path.insertAfter(defaultDeclaration(name as string));
     }
 
     if (
@@ -85,7 +83,7 @@ export default <jscodeshift.Transform>function (file, api, options) {
 
       path.insertAfter(defaultDeclaration(declaration.left.name));
     }
-  });
+  }
 
   return root.toSource({ lineTerminator: '\n' });
 };

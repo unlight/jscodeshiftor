@@ -13,7 +13,7 @@ function isTopLevel(path: ASTPath) {
 }
 
 export function getTopLevelVariables(j: JSCodeshift, collection: Collection) {
-  return collection.find(j.VariableDeclaration).filter(isTopLevel);
+  return collection.find(j.VariableDeclaration).filter(isTopLevel).paths();
 }
 
 export function getTopLevelVariableNames(
@@ -22,35 +22,38 @@ export function getTopLevelVariableNames(
 ) {
   const identifiers: string[] = [];
 
-  getTopLevelVariables(j, collection).forEach(path => {
+  for (const path of getTopLevelVariables(j, collection)) {
     const variableDeclaration = path.value;
 
-    variableDeclaration.declarations.forEach(declaration => {
+    for (const declaration of variableDeclaration.declarations) {
       if (declaration.type === 'VariableDeclarator') {
         if (declaration.id.type === 'Identifier') {
           identifiers.push(declaration.id.name);
         }
         if (declaration.id.type === 'ObjectPattern') {
-          declaration.id.properties.forEach(p => {
+          for (const p of declaration.id.properties) {
             if (p.type === 'Property' && p.value.type === 'Identifier')
               identifiers.push(p.value.name);
-          });
+          }
         }
       }
-    });
-  });
+    }
+  }
 
   return identifiers;
 }
 
 export function getImportedVarNames(j: JSCodeshift, collection: Collection) {
   const identifiers: string[] = [];
-  collection.find(j.ImportDeclaration).forEach(path => {
+  for (const path of collection.find(j.ImportDeclaration).paths()) {
     const importDeclaration = path.value;
-    importDeclaration.specifiers?.forEach(specifier => {
-      if (specifier.local?.name) identifiers.push(specifier.local?.name);
-    });
-  });
+    if (importDeclaration.specifiers)
+      for (const specifier of importDeclaration.specifiers) {
+        if (typeof specifier.local?.name === 'string') {
+          identifiers.push(specifier.local?.name);
+        }
+      }
+  }
 
   return identifiers;
 }
@@ -62,8 +65,8 @@ export function getExportsByFunctionName(
 ) {
   return collection.find(j.ExportNamedDeclaration, {
     declaration: {
+      id: { name: className, type: 'Identifier' },
       type: 'FunctionDeclaration',
-      id: { type: 'Identifier', name: className },
     },
   });
 }
@@ -72,9 +75,11 @@ export function getNamedExportedClasses(
   j: JSCodeshift,
   collection: Collection,
 ) {
-  return collection.find(j.ExportNamedDeclaration, {
-    declaration: { type: 'ClassDeclaration', id: { type: 'Identifier' } },
-  });
+  return collection
+    .find(j.ExportNamedDeclaration, {
+      declaration: { id: { type: 'Identifier' }, type: 'ClassDeclaration' },
+    })
+    .paths();
 }
 
 export function getNamedExportedClassNames(
@@ -83,12 +88,12 @@ export function getNamedExportedClassNames(
 ) {
   const identifiers: string[] = [];
 
-  getNamedExportedClasses(j, collection).forEach(path => {
+  for (const path of getNamedExportedClasses(j, collection)) {
     const exportNamedDeclaration: any = path.value;
     if (exportNamedDeclaration.declaration?.id) {
       identifiers.push(exportNamedDeclaration.declaration.id.name);
     }
-  });
+  }
 
   return identifiers;
 }
@@ -97,12 +102,14 @@ export function getNamedExportedFunctions(
   j: JSCodeshift,
   collection: Collection,
 ) {
-  return collection.find(j.ExportNamedDeclaration, {
-    declaration: {
-      type: 'FunctionDeclaration',
-      id: { type: 'Identifier' },
-    },
-  });
+  return collection
+    .find(j.ExportNamedDeclaration, {
+      declaration: {
+        id: { type: 'Identifier' },
+        type: 'FunctionDeclaration',
+      },
+    })
+    .paths();
 }
 
 export function getNamedExportedFunctionNames(
@@ -111,12 +118,12 @@ export function getNamedExportedFunctionNames(
 ) {
   const identifiers: string[] = [];
 
-  getNamedExportedFunctions(j, collection).forEach(path => {
+  for (const path of getNamedExportedFunctions(j, collection)) {
     const exportNamedDeclaration: any = path.value;
     if (exportNamedDeclaration.declaration?.id) {
       identifiers.push(exportNamedDeclaration.declaration.id.name);
     }
-  });
+  }
 
   return identifiers;
 }
@@ -128,24 +135,26 @@ export function getExportsByClassName(
 ) {
   return collection.find(j.ExportNamedDeclaration, {
     declaration: {
+      id: { name: className, type: 'Identifier' },
       type: 'ClassDeclaration',
-      id: { type: 'Identifier', name: className },
     },
   });
 }
 
 export function getNamedExportedVars(j: JSCodeshift, collection: Collection) {
-  return collection.find(j.ExportNamedDeclaration, {
-    declaration: { type: 'VariableDeclaration' },
-  });
+  return collection
+    .find(j.ExportNamedDeclaration, {
+      declaration: { type: 'VariableDeclaration' },
+    })
+    .paths();
 }
 
 export function getTopLevelClasses(j: JSCodeshift, collection: Collection) {
-  return collection.find(j.ClassDeclaration).filter(isTopLevel);
+  return collection.find(j.ClassDeclaration).filter(isTopLevel).paths();
 }
 
 export function getTopLevelFunctions(j: JSCodeshift, collection: Collection) {
-  return collection.find(j.FunctionDeclaration).filter(isTopLevel);
+  return collection.find(j.FunctionDeclaration).filter(isTopLevel).paths();
 }
 
 export function getTopLevelClassByName(
@@ -155,7 +164,7 @@ export function getTopLevelClassByName(
 ) {
   return collection
     .find(j.ClassDeclaration, {
-      id: { type: 'Identifier', name: className },
+      id: { name: className, type: 'Identifier' },
     })
     .filter(isTopLevel);
 }
@@ -167,7 +176,7 @@ export function getTopLevelFunctionByName(
 ) {
   return collection
     .find(j.FunctionDeclaration, {
-      id: { type: 'Identifier', name: className },
+      id: { name: className, type: 'Identifier' },
     })
     .filter(isTopLevel);
 }
@@ -175,14 +184,14 @@ export function getTopLevelFunctionByName(
 export function getTopLevelVariableByName(
   j: JSCodeshift,
   collection: Collection,
-  varName,
+  variableName,
 ) {
   return collection
     .find(j.VariableDeclaration, {
       declarations: [
         {
+          id: { name: variableName, type: 'Identifier' },
           type: 'VariableDeclarator',
-          id: { type: 'Identifier', name: varName },
         },
       ],
     })
@@ -195,35 +204,39 @@ export function getNamedExportedVarNames(
 ) {
   const identifiers: string[] = [];
 
-  getNamedExportedVars(j, collection).forEach(path => {
+  for (const path of getNamedExportedVars(j, collection)) {
     const exportNamedDeclaration = path.value;
-    if (exportNamedDeclaration.declaration?.type === 'VariableDeclaration')
-      exportNamedDeclaration.declaration.declarations?.forEach(declaration => {
+    if (
+      exportNamedDeclaration.declaration?.type === 'VariableDeclaration' &&
+      exportNamedDeclaration.declaration.declarations
+    )
+      for (const declaration of exportNamedDeclaration.declaration
+        .declarations) {
         if (declaration.type === 'VariableDeclarator') {
           if (declaration.id.type === 'Identifier') {
             identifiers.push(declaration.id.name);
           }
           if (declaration.id.type === 'ObjectPattern') {
-            declaration.id.properties.forEach(p => {
+            for (const p of declaration.id.properties) {
               if (p.type === 'Property' && p.value.type === 'Identifier')
                 identifiers.push(p.value.name);
-            });
+            }
           }
         }
-      });
-  });
+      }
+  }
 
   return identifiers;
 }
 
 export function getTopLevelClassNames(j: JSCodeshift, collection: Collection) {
   const identifiers: string[] = [];
-  getTopLevelClasses(j, collection).forEach(path => {
+  for (const path of getTopLevelClasses(j, collection)) {
     const classDeclaration = path.value;
     if (classDeclaration?.id) {
-      identifiers.push(classDeclaration.id.name);
+      identifiers.push(classDeclaration.id.name as string);
     }
-  });
+  }
   return identifiers;
 }
 
@@ -232,12 +245,12 @@ export function getTopLevelFunctionNames(
   collection: Collection,
 ) {
   const identifiers: string[] = [];
-  getTopLevelFunctions(j, collection).forEach(path => {
+  for (const path of getTopLevelFunctions(j, collection)) {
     const functionDeclaration = path.value;
     if (functionDeclaration.id) {
-      identifiers.push(functionDeclaration.id.name);
+      identifiers.push(functionDeclaration.id.name as string);
     }
-  });
+  }
   return identifiers;
 }
 
@@ -267,17 +280,17 @@ export function exportClass(j: JSCodeshift, path) {
 export function getExportsByVarName(
   j: JSCodeshift,
   collection: Collection,
-  varName: string,
+  variableName: string,
 ) {
   return collection.find(j.ExportNamedDeclaration, {
     declaration: {
-      type: 'VariableDeclaration',
       declarations: [
         {
+          id: { name: variableName, type: 'Identifier' },
           type: 'VariableDeclarator',
-          id: { type: 'Identifier', name: varName },
         },
       ],
+      type: 'VariableDeclaration',
     },
   });
 }
@@ -302,7 +315,7 @@ export function exportFunction(
 
   return j.exportNamedDeclaration(
     j.functionDeclaration(
-      j.identifier(functionDeclaration.id!.name),
+      j.identifier(functionDeclaration.id!.name as string),
       functionDeclaration.params,
       functionDeclaration.body,
     ),
@@ -322,10 +335,12 @@ export function exportVariable(
 
 export function exportDefaultAsNamed(j: JSCodeshift, path, name) {
   const exportDefaultDeclaration = path.value;
-  const varName = j.identifier(name);
-  const varValue = exportDefaultDeclaration.declaration;
+  const variableName = j.identifier(name);
+  const variableValue = exportDefaultDeclaration.declaration;
   return j.exportNamedDeclaration(
-    j.variableDeclaration('const', [j.variableDeclarator(varName, varValue)]),
+    j.variableDeclaration('const', [
+      j.variableDeclarator(variableName, variableValue),
+    ]),
   );
 }
 

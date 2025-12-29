@@ -1,7 +1,6 @@
 import jscodeshift from 'jscodeshift';
 
-export default <jscodeshift.Transform>function (file, api, options) {
-  // eslint-disable-next-line unicorn/prevent-abbreviations
+export default <jscodeshift.Transform>function (file, api) {
   const j = api.jscodeshift;
   return j(file.source)
     .find(j.ObjectExpression)
@@ -22,52 +21,54 @@ function iterateObjectExpression({
   const identifierNodes = (name: string) =>
     j(objectExpression)
       .find(j.Property, {
-        key: {
-          type: 'Identifier',
-          name,
-        },
         computed: false,
+        key: {
+          name,
+          type: 'Identifier',
+        },
       })
       .filter(p => p.parent === objectExpression);
   // Literals
   const literalNodes = (name: string) =>
     j(objectExpression)
       .find(j.Property, {
+        computed: false,
         key: {
           type: 'Literal',
           value: name,
         },
-        computed: false,
       })
       .filter(p => p.parent === objectExpression);
 
-  j(objectExpression)
+  for (const property of j(objectExpression)
     .find(j.Property)
     .filter(p => p.parent === objectExpression)
     .filter(p => p.value.computed === false)
-    .forEach(property => {
-      const identifier = getIdentifierValue(property);
-      // console.log({
-      //     identifier,
-      //     toSource: j(property).toSource(),
-      //     parent: j(property.parent).toSource(),
-      // });
-      const count =
-        identifierNodes(identifier).size() + literalNodes(identifier).size();
-      if (count > 1) {
-        j(property).remove();
-      }
-    });
+    .paths()) {
+    const identifier = getIdentifierValue(property);
+    // console.log({
+    //     identifier,
+    //     toSource: j(property).toSource(),
+    //     parent: j(property.parent).toSource(),
+    // });
+    const count =
+      identifierNodes(identifier).size() + literalNodes(identifier).size();
+    if (count > 1) {
+      j(property).remove();
+    }
+  }
 }
 
 function getIdentifierValue(
   property: jscodeshift.ASTPath<jscodeshift.Property>,
 ) {
   switch (property.node.key.type) {
-    case 'Identifier':
+    case 'Identifier': {
       return property.node.key.name;
-    case 'Literal':
+    }
+    case 'Literal': {
       return String(property.node.key.value);
+    }
   }
   throw new TypeError(`Unknow type ${property.node.key.type}`);
 }

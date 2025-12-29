@@ -1,4 +1,4 @@
-import expect from 'expect';
+import { expect } from 'expect';
 import { it } from 'mocha';
 
 import plugin from './replace-utils';

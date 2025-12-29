@@ -38,14 +38,10 @@ export default defineConfig(
   },
   {
     rules: {
-      'unicorn/prevent-abbreviations': [
-        'warn',
-        {
-          replacements: {
-            args: false,
-          },
-        },
-      ],
+      'unicorn/no-array-callback-reference': 0,
+      'unicorn/no-array-for-each': 0,
+      'unicorn/no-array-method-this-argument': 0,
+      'unicorn/prevent-abbreviations': 0,
     },
   },
   {

@@ -1,4 +1,4 @@
-import expect from 'expect';
+import { expect } from 'expect';
 import { it, describe } from 'mocha';
 
 import plugin from './export-default-name';

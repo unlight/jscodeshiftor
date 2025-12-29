@@ -1,10 +1,12 @@
-import { ok } from 'assert';
+import { ok } from 'node:assert';
+
 import jscodeshift from 'jscodeshift';
+
 import { describe, printCode } from './testing';
 
 export const parser = 'acorn';
 
-export default <jscodeshift.Transform>function (file, api, options) {
+export default <jscodeshift.Transform>function (file, api) {
   const j = api.jscodeshift;
   const root = j(file.source);
   type ExportSpecifier = any;
@@ -13,11 +15,11 @@ export default <jscodeshift.Transform>function (file, api, options) {
   const exportSpecifiers: ExportSpecifier[] = [];
 
   // Find exports
-  root.find(j.ExportNamedDeclaration).forEach(path => {
-    const { specifiers, declaration, comments, source } = path.value;
+  for (const path of root.find(j.ExportNamedDeclaration).paths()) {
+    const { comments, declaration, source, specifiers } = path.value;
 
     // Keep export from
-    if (source) return;
+    if (source) continue;
 
     if (declaration && comments?.length) {
       if (!declaration?.comments?.length) declaration.comments = [];
@@ -35,29 +37,29 @@ export default <jscodeshift.Transform>function (file, api, options) {
           exportNames.push(path.value.id.name);
         }
         if (path.value.id.type === 'ObjectPattern') {
-          path.value.id.properties
-            .filter(p => p.type === 'Property')
-            .forEach(p => {
-              if (p.value.type === 'Identifier') {
-                exportNames.push(p.value.name);
-              }
-            });
+          for (const p of path.value.id.properties.filter(
+            p => p.type === 'Property',
+          )) {
+            if (p.value.type === 'Identifier') {
+              exportNames.push(p.value.name);
+            }
+          }
         }
       });
 
     if (declaration?.type === 'ClassDeclaration') {
-      const name = declaration.id?.name;
+      const name = declaration.id?.name as string;
       if (name) exportNames.push(name);
     }
 
     if (declaration?.type === 'FunctionDeclaration') {
-      const name = declaration.id?.name;
+      const name = declaration.id?.name as string;
       if (name) exportNames.push(name);
     }
 
     // Remove export keyword
     path.replace(declaration as any);
-  });
+  }
 
   const exportNamedDeclaration = j.exportNamedDeclaration(
     null, // No declaration
