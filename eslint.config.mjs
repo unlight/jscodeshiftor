@@ -26,7 +26,6 @@ export default defineConfig(
       sourceType: 'module',
     },
     rules: {
-      'max-lines': [1, { max: 400 }],
       'max-params': [1, { max: 3 }],
       'no-unneeded-ternary': [1],
     },

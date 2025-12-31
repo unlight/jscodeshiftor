@@ -12,7 +12,7 @@ Suggests code modifications and enhancements
 
 ```sh
 jscodeshift -t src/transforms/noop.ts fixtures
-npx jscodeshift -c=1 -v=2  -t=https://raw.githubusercontent.com/unlight/jscodeshiftor/refs/heads/master/src/noop.ts <target-files-or-dirs>
+npx jscodeshift --run-in-band --parser=ts -t=https://raw.githubusercontent.com/unlight/jscodeshiftor/refs/heads/master/src/noop.ts <target-files-or-dirs>
 ```
 
 ## Tools
