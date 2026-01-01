@@ -8,6 +8,7 @@
   "compilerOptions": {
     "target": "ES2023",
     "module": "commonjs",
+    "allowImportingTsExtensions": true,
     "moduleResolution": "node",
     "importHelpers": true,
     "strict": true,
