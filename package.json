@@ -3,7 +3,10 @@
   "version": "0.0.0-dev",
   "license": "MIT",
   "main": "index.js",
-  "keywords": ["jscodeshift", "codemod"],
+  "keywords": [
+    "jscodeshift",
+    "codemod"
+  ],
   "bin": "./bin/cli.js",
   "scripts": {
     "test": "npm run eslint && npm run tscheck && npm run test:r",
@@ -32,7 +35,7 @@
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import-x": "^4.16.1",
     "eslint-plugin-only-warn": "^1.1.0",
-    "eslint-plugin-perfectionist": "^5.1.0",
+    "eslint-plugin-perfectionist": "^5.2.0",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-unicorn": "^62.0.0",
     "expect": "^30.2.0",
