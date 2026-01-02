@@ -5,8 +5,9 @@ import { dedent } from 'strip-indent';
 import removeUnusedVars, { TOptions } from './remove-unused-vars.ts';
 type GetNoUnusedVars = TOptions['getNoUnusedVars'];
 
-describe('remove unused vars', () => {
+describe('remove unused vars from destructured object', () => {
   it('should remove unused destructured variable', () => {
+    // @ts-expect-error Test
     const getNoUnusedVars: GetNoUnusedVars = () => {
       return [
         {
@@ -18,19 +19,55 @@ describe('remove unused vars', () => {
                 "'unusedDestructured' is assigned a value but never used.",
               ruleId: 'no-unused-vars',
             },
+            {
+              column: 12,
+              line: 2,
+              message: "'unused' is assigned a value but never used.",
+              ruleId: 'no-unused-vars',
+            },
           ],
         },
       ];
     };
     const source = dedent(`
       const { usedDestructured, unusedDestructured } = object;
-      console.log(usedDestructured);
+      const { unused } = object;
     `);
     const expected = dedent(`
       const {
         usedDestructured
       } = object;
-      console.log(usedDestructured);
+    `);
+    const result = applyTransform(
+      { default: removeUnusedVars, parser: 'ts' },
+      { getNoUnusedVars },
+      { source },
+    );
+
+    expect(result).toBe(expected);
+  });
+
+  it('keep unrelated empty assignment expression', () => {
+    // @ts-expect-error Test
+    const getNoUnusedVars: GetNoUnusedVars = () => {
+      return [
+        {
+          messages: [
+            {
+              column: 12,
+              line: 2,
+              message: "'unused' is assigned a value but never used.",
+              ruleId: 'no-unused-vars',
+            },
+          ],
+        },
+      ];
+    };
+    const source = dedent(`
+      const { origin = {}, model } = object;
+    `);
+    const expected = dedent(`
+      const { origin = {}, model } = object;
     `);
     const result = applyTransform(
       { default: removeUnusedVars, parser: 'ts' },

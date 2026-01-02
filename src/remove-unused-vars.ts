@@ -1,7 +1,9 @@
 import assert from 'node:assert';
 import { execSync } from 'node:child_process';
 
-import jscodeshift, { VariableDeclarator } from 'jscodeshift';
+import jscodeshift, { Identifier, Node } from 'jscodeshift';
+
+import { code } from './testing';
 
 import type { ESLint } from 'eslint';
 type LintResult = Awaited<ReturnType<ESLint['lintText']>>;
@@ -21,165 +23,67 @@ export default <jscodeshift.Transform>(
       getNoUnusedVars: options.getNoUnusedVars,
     });
 
+    // console.log('remove-unused-vars.ts:25', 'error:', error);
+
     assert.ifError(error);
 
     if (!unusedVariables || unusedVariables.length === 0) {
-      return;
+      return file.source;
     }
 
-    // Track all variable declarations and their usage
-    const variableDeclarations = new Map(); // name -> Array<declaration info>
+    for (const unusedVariable of unusedVariables) {
+      root.findVariableDeclarators().forEach(path => {
+        const { node } = path;
 
-    // Collect from regular variable declarations (var, let, const)
-    root.find(j.VariableDeclaration).forEach(path => {
-      const { node } = path;
+        if (j.ObjectPattern.check(node.id)) {
+          node.id.properties = node.id.properties.filter(prop => {
+            const shouldRemove =
+              'value' in prop &&
+              j.Identifier.check(prop.value) &&
+              isMatchVariable(prop.value, unusedVariable);
 
-      node.declarations.forEach(declarator => {
-        const { id } = declarator as VariableDeclarator;
-
-        switch (id.type) {
-          case 'Identifier': {
-            // Simple variable: let x = 5;
-            const varName = id.name;
-            if (!variableDeclarations.has(varName)) {
-              variableDeclarations.set(varName, []);
-            }
-            variableDeclarations.get(varName).push({
-              isDestructured: false,
-              kind: node.kind, // 'var', 'let', or 'const'
-              node: declarator,
-              parentPath: j(path),
-              path: path,
-            });
-
-            break;
-          }
-          case 'ObjectPattern': {
-            // Destructuring: const { a, b } = object;
-            id.properties.forEach(property => {
-              if (
-                property.type === 'ObjectProperty' &&
-                property.value.type === 'Identifier'
-              ) {
-                const varName = property.value.name;
-                if (!variableDeclarations.has(varName)) {
-                  variableDeclarations.set(varName, []);
-                }
-                variableDeclarations.get(varName).push({
-                  declaratorNode: declarator,
-                  isDestructured: true,
-                  kind: node.kind,
-                  node: property,
-                  parentDeclarator: declarator,
-                  parentNode: id,
-                  parentPath: path,
-                });
-              } else if (
-                property.type === 'RestElement' &&
-                property.argument.type === 'Identifier'
-              ) {
-                // Handle rest: const { a, ...rest } = object;
-                const varName = property.argument.name;
-                if (!variableDeclarations.has(varName)) {
-                  variableDeclarations.set(varName, []);
-                }
-                variableDeclarations.get(varName).push({
-                  declaratorNode: declarator,
-                  isDestructured: true,
-                  isRest: true,
-                  kind: node.kind,
-                  node: property,
-                  parentNode: id,
-                  parentPath: path,
-                });
-              }
-            });
-
-            break;
-          }
-          case 'ArrayPattern': {
-            // Array destructuring: const [a, b] = arr;
-            id.elements.forEach((element, index) => {
-              if (element && element.type === 'Identifier') {
-                const varName = element.name;
-                if (!variableDeclarations.has(varName)) {
-                  variableDeclarations.set(varName, []);
-                }
-                variableDeclarations.get(varName).push({
-                  declaratorNode: declarator,
-                  index: index,
-                  isDestructured: true,
-                  kind: node.kind,
-                  node: element,
-                  parentNode: id,
-                  parentPath: path,
-                });
-              }
-            });
-
-            break;
-          }
-          // No default
+            return !shouldRemove;
+          });
         }
       });
-    });
-
-    // Remove unused variables
-    for (const [varName, declarations] of variableDeclarations.entries()) {
-      if (!unusedVariables.some(u => u.name === varName)) continue;
-
-      for (const decl of declarations) {
-        const { start } = decl.node.loc;
-
-        if (
-          !unusedVariables.some(
-            u => u.startLocation === `${start.line}:${start.column}`,
-          )
-        ) {
-          continue;
-        }
-
-        // Check if variable should be removed
-        const shouldRemoveByKind =
-          decl.kind === 'var' || decl.kind === 'let' || decl.kind === 'const';
-
-        if (shouldRemoveByKind) {
-          if (!decl.isDestructured) {
-            // Remove simple variable declaration
-            removeSimpleVariable(decl);
-          } else if (true /*removeDestructuredUnused*/) {
-            // Remove destructured variable
-            removeDestructuredVariable(decl);
-          }
-        }
-      }
     }
 
     // Cleanup
 
-    // Remove empty variable declarations
-    root.find(j.VariableDeclaration).forEach(path => {
-      if (!path.node.declarations || path.node.declarations.length === 0) {
+    root.findVariableDeclarators().forEach(path => {
+      const { node } = path;
+
+      // Remove empty in destructured object
+      if (j.ObjectPattern.check(node.id) && node.id.properties.length === 0) {
         j(path).remove();
       }
     });
 
-    // Remove standalone semicolons that might be left behind
-    root.find(j.EmptyStatement).forEach(path => {
-      j(path).remove();
-    });
+    // Remove empty variable declarations
+    // root.find(j.VariableDeclaration).forEach(path => {
+    //   if (!path.node.declarations || path.node.declarations.length === 0) {
+    //     j(path).remove();
+    //   }
+    // });
 
-    // Clean up trailing commas in object/array patterns
-    root.find(j.ObjectPattern).forEach(path => {
-      const properties = path.node.properties;
-      if (properties.length > 0) {
-        const lastProp = properties.at(-1);
-        if (lastProp.type === 'ObjectProperty' && !lastProp.computed) {
-          // Remove trailing comma if present
-          // jscodeshift handles this in toSource()
-        }
-      }
-    });
+    // // Remove standalone semicolons that might be left behind
+    // root.find(j.EmptyStatement).forEach(path => {
+    //   j(path).remove();
+    // });
+
+    // // Clean up trailing commas in object/array patterns
+    // root.find(j.ObjectPattern).forEach(path => {
+    //   const properties = path.node.properties;
+    //   const lastProp = properties.at(-1);
+    //   if (
+    //     lastProp &&
+    //     lastProp.type === 'ObjectProperty' &&
+    //     !lastProp.computed
+    //   ) {
+    //     // Remove trailing comma if present
+    //     // jscodeshift handles this in toSource()
+    //   }
+    // });
 
     return root.toSource({ lineTerminator: '\n' });
   }
@@ -189,6 +93,12 @@ type TFindOptions = {
   files: string[];
   getNoUnusedVars?: typeof getNoUnusedVars;
 };
+type UnusedVariable = {
+  column: number;
+  file: string;
+  line: number;
+  name: string | null;
+};
 
 function findUnusedVariables(args: TFindOptions) {
   const { files } = args;
@@ -196,14 +106,7 @@ function findUnusedVariables(args: TFindOptions) {
 
   try {
     const results = getUnusedVariables(files);
-    const unusedVariables = [] as {
-      column: number;
-      file: string;
-      line: number;
-      message: string;
-      name: string | null;
-      startLocation: string;
-    }[];
+    const unusedVariables: UnusedVariable[] = [];
 
     for (const result of results) {
       if (!result.messages) continue;
@@ -222,9 +125,7 @@ function findUnusedVariables(args: TFindOptions) {
             column,
             file: result.filePath,
             line,
-            message: text,
             name: varName,
-            startLocation: `${line}:${column - 1}`, // Adapt for jscodeshift
           });
         }
       }
@@ -239,10 +140,15 @@ function findUnusedVariables(args: TFindOptions) {
 
 function getNoUnusedVars(files: string[]) {
   const fileList = files.map(f => `"${f}"`).join(' ');
-  const output = execSync(
-    `npx eslint --rule "*: 0" --rule "no-unused-vars: 1" --format json ${fileList}`,
-    { encoding: 'utf8' },
-  );
+  let output: string;
+  try {
+    output = execSync(
+      `npx eslint --rule "*: 0" --rule "no-unused-vars: 1" --format json ${fileList}`,
+      { encoding: 'utf8' },
+    );
+  } catch (error) {
+    output = error.stdout;
+  }
 
   return JSON.parse(output) as LintResult;
 }
@@ -319,4 +225,11 @@ function removeDestructuredVariable(decl) {
       }
     }
   }
+}
+
+function isMatchVariable(node: Identifier, unused: UnusedVariable) {
+  if (!node.loc) return false;
+  const { start } = node.loc;
+
+  return node.name === unused.name && unused.line === start.line;
 }
