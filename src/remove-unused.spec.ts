@@ -2,8 +2,8 @@ import { expect } from 'expect';
 import { applyTransform } from 'jscodeshift/src/testUtils';
 import { dedent } from 'strip-indent';
 
-import removeUnusedVars, { TOptions } from './remove-unused-vars.ts';
-type GetNoUnusedVars = TOptions['getNoUnusedVars'];
+import removeUnusedVars, { TransformOptions } from './remove-unused.ts';
+type GetNoUnusedVars = TransformOptions['getNoUnusedVars'];
 
 describe('remove unused vars from destructured object', () => {
   it('should remove unused destructured variable', () => {

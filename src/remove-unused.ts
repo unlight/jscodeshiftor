@@ -7,29 +7,29 @@ import { code } from './testing';
 
 import type { ESLint } from 'eslint';
 type LintResult = Awaited<ReturnType<ESLint['lintText']>>;
-export type TOptions = {
-  getNoUnusedVars?: TFindOptions['getNoUnusedVars'];
+export type TransformOptions = {
+  getNoUnusedVars?: FindUnusedArgs['getNoUnusedVars'];
   files: string[];
 };
 
 export default <jscodeshift.Transform>(
-  function removeUnusedVars(file, api, options: TOptions) {
+  function removeUnusedVars(file, api, options: TransformOptions) {
     const j = api.jscodeshift;
     const root = j(file.source);
     const filePath = file.path;
     // Get unused variables
-    const { error, result: unusedVariables } = findUnusedVariables({
+    const { error, result: unusedParts } = findUnused({
       files: [filePath],
       getNoUnusedVars: options.getNoUnusedVars,
     });
 
     assert.ifError(error);
 
-    if (!unusedVariables || unusedVariables.length === 0) {
+    if (!unusedParts || unusedParts.length === 0) {
       return file.source;
     }
 
-    for (const unusedVariable of unusedVariables) {
+    for (const unused of unusedParts) {
       root.findVariableDeclarators().forEach(path => {
         const { node } = path;
 
@@ -38,7 +38,7 @@ export default <jscodeshift.Transform>(
             const shouldRemove =
               'value' in prop &&
               j.Identifier.check(prop.value) &&
-              isMatchVariable(prop.value, unusedVariable);
+              isMatchVariable(prop.value, unused);
 
             return !shouldRemove;
           });
@@ -47,12 +47,12 @@ export default <jscodeshift.Transform>(
 
       root
         .find(j.FunctionDeclaration, {
-          id: { name: unusedVariable.name },
+          id: { name: unused.name },
         })
         .forEach(path => {
           if (
             j.Identifier.check(path.node.id) &&
-            isMatchVariable(path.node.id, unusedVariable)
+            isMatchVariable(path.node.id, unused)
           ) {
             j(path).remove();
           }
@@ -100,24 +100,25 @@ export default <jscodeshift.Transform>(
   }
 );
 
-type TFindOptions = {
+type FindUnusedArgs = {
   files: string[];
   getNoUnusedVars?: typeof getNoUnusedVars;
 };
-type UnusedVariable = {
+
+type Unused = {
   column: number;
   file: string;
   line: number;
   name: string;
 };
 
-function findUnusedVariables(args: TFindOptions) {
+function findUnused(args: FindUnusedArgs) {
   const { files } = args;
   const getUnusedVariables = args.getNoUnusedVars ?? getNoUnusedVars;
 
   try {
     const results = getUnusedVariables(files);
-    const unusedVariables: UnusedVariable[] = [];
+    const unused: Unused[] = [];
 
     for (const result of results) {
       if (!result.messages) continue;
@@ -133,7 +134,7 @@ function findUnusedVariables(args: TFindOptions) {
 
           if (!varName) continue;
 
-          unusedVariables.push({
+          unused.push({
             column,
             file: result.filePath,
             line,
@@ -143,7 +144,7 @@ function findUnusedVariables(args: TFindOptions) {
       }
     }
 
-    return { result: unusedVariables };
+    return { result: unused };
   } catch (error_) {
     const error = error_ as Error;
     return { error, message: error.message };
@@ -165,7 +166,7 @@ function getNoUnusedVars(files: string[]) {
   return JSON.parse(output) as LintResult;
 }
 
-function isMatchVariable(node: Identifier | null, unused: UnusedVariable) {
+function isMatchVariable(node: Identifier | null, unused: Unused) {
   if (!node?.loc) return false;
   const { start } = node.loc;
 
