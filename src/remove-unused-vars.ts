@@ -23,8 +23,6 @@ export default <jscodeshift.Transform>(
       getNoUnusedVars: options.getNoUnusedVars,
     });
 
-    // console.log('remove-unused-vars.ts:25', 'error:', error);
-
     assert.ifError(error);
 
     if (!unusedVariables || unusedVariables.length === 0) {
@@ -46,6 +44,19 @@ export default <jscodeshift.Transform>(
           });
         }
       });
+
+      root
+        .find(j.FunctionDeclaration, {
+          id: { name: unusedVariable.name },
+        })
+        .forEach(path => {
+          if (
+            j.Identifier.check(path.node.id) &&
+            isMatchVariable(path.node.id, unusedVariable)
+          ) {
+            j(path).remove();
+          }
+        });
     }
 
     // Cleanup
@@ -97,7 +108,7 @@ type UnusedVariable = {
   column: number;
   file: string;
   line: number;
-  name: string | null;
+  name: string;
 };
 
 function findUnusedVariables(args: TFindOptions) {
@@ -115,11 +126,12 @@ function findUnusedVariables(args: TFindOptions) {
         const { column, line, message: text, ruleId } = message;
         if (
           ruleId === 'no-unused-vars' ||
-          ruleId === '@typescript-eslint/no-unused-vars'
+          ruleId?.endsWith('/no-unused-vars')
         ) {
           // Extract variable name from message
-          const match = text.match(/'([^']+)'/);
-          const varName = match?.[1] || null;
+          const varName = text.match(/'([^']+)'/)?.[1];
+
+          if (!varName) continue;
 
           unusedVariables.push({
             column,
@@ -153,83 +165,83 @@ function getNoUnusedVars(files: string[]) {
   return JSON.parse(output) as LintResult;
 }
 
-// Helper functions for removal
-function removeSimpleVariable(decl) {
-  const parentPath = decl.parentPath;
-  const parentNode = parentPath.node;
-
-  if (parentNode.declarations.length === 1) {
-    // Remove entire declaration if this is the only declarator
-    j(parentPath).remove();
-  } else {
-    // Remove just this declarator from the declaration
-    parentNode.declarations = parentNode.declarations.filter(
-      d => d !== decl.node,
-    );
-  }
-}
-
-function removeDestructuredVariable(decl) {
-  if (decl.parentNode.type === 'ObjectPattern') {
-    // Handle object destructuring
-    const parentPattern = decl.parentNode;
-    const properties = parentPattern.properties;
-
-    // Remove the property from the object pattern
-    const newProperties = properties.filter(prop => {
-      if (prop.type === 'ObjectProperty' && prop.value.type === 'Identifier') {
-        return prop.value.name !== decl.node.value.name;
-      } else if (
-        prop.type === 'RestElement' &&
-        prop.argument.type === 'Identifier'
-      ) {
-        return prop.argument.name !== decl.node.name;
-      }
-      return true;
-    });
-
-    parentPattern.properties = newProperties;
-
-    // If pattern is now empty, remove entire declaration
-    if (newProperties.length === 0 && decl.declaratorNode) {
-      const varDecl = decl.parentPath.node;
-      const newDeclarators = varDecl.declarations.filter(
-        d => d !== decl.declaratorNode,
-      );
-
-      if (newDeclarators.length === 0) {
-        j(decl.parentPath).remove();
-      } else {
-        varDecl.declarations = newDeclarators;
-      }
-    }
-  } else if (decl.parentNode.type === 'ArrayPattern') {
-    // Handle array destructuring - replace with null placeholder
-    const parentPattern = decl.parentNode;
-    const elements = parentPattern.elements;
-
-    elements[decl.index] = null;
-
-    // Check if all elements are null
-    const allNull = elements.every(el => el === null);
-    if (allNull && decl.declaratorNode) {
-      const varDecl = decl.parentPath.node;
-      const newDeclarators = varDecl.declarations.filter(
-        d => d !== decl.declaratorNode,
-      );
-
-      if (newDeclarators.length === 0) {
-        j(decl.parentPath).remove();
-      } else {
-        varDecl.declarations = newDeclarators;
-      }
-    }
-  }
-}
-
-function isMatchVariable(node: Identifier, unused: UnusedVariable) {
-  if (!node.loc) return false;
+function isMatchVariable(node: Identifier | null, unused: UnusedVariable) {
+  if (!node?.loc) return false;
   const { start } = node.loc;
 
   return node.name === unused.name && unused.line === start.line;
 }
+
+// Helper functions for removal
+// function removeSimpleVariable(decl) {
+//   const parentPath = decl.parentPath;
+//   const parentNode = parentPath.node;
+
+//   if (parentNode.declarations.length === 1) {
+//     // Remove entire declaration if this is the only declarator
+//     j(parentPath).remove();
+//   } else {
+//     // Remove just this declarator from the declaration
+//     parentNode.declarations = parentNode.declarations.filter(
+//       d => d !== decl.node,
+//     );
+//   }
+// }
+
+// function removeDestructuredVariable(decl) {
+//   if (decl.parentNode.type === 'ObjectPattern') {
+//     // Handle object destructuring
+//     const parentPattern = decl.parentNode;
+//     const properties = parentPattern.properties;
+
+//     // Remove the property from the object pattern
+//     const newProperties = properties.filter(prop => {
+//       if (prop.type === 'ObjectProperty' && prop.value.type === 'Identifier') {
+//         return prop.value.name !== decl.node.value.name;
+//       } else if (
+//         prop.type === 'RestElement' &&
+//         prop.argument.type === 'Identifier'
+//       ) {
+//         return prop.argument.name !== decl.node.name;
+//       }
+//       return true;
+//     });
+
+//     parentPattern.properties = newProperties;
+
+//     // If pattern is now empty, remove entire declaration
+//     if (newProperties.length === 0 && decl.declaratorNode) {
+//       const varDecl = decl.parentPath.node;
+//       const newDeclarators = varDecl.declarations.filter(
+//         d => d !== decl.declaratorNode,
+//       );
+
+//       if (newDeclarators.length === 0) {
+//         j(decl.parentPath).remove();
+//       } else {
+//         varDecl.declarations = newDeclarators;
+//       }
+//     }
+//   } else if (decl.parentNode.type === 'ArrayPattern') {
+//     // Handle array destructuring - replace with null placeholder
+//     const parentPattern = decl.parentNode;
+//     const elements = parentPattern.elements;
+
+//     elements[decl.index] = null;
+
+//     // Check if all elements are null
+//     const allNull = elements.every(el => el === null);
+//     if (allNull && decl.declaratorNode) {
+//       const varDecl = decl.parentPath.node;
+//       const newDeclarators = varDecl.declarations.filter(
+//         d => d !== decl.declaratorNode,
+//       );
+
+//       if (newDeclarators.length === 0) {
+//         j(decl.parentPath).remove();
+//       } else {
+//         varDecl.declarations = newDeclarators;
+//       }
+//     }
+//   }
+// }

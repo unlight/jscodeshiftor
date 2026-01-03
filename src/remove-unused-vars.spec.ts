@@ -13,14 +13,12 @@ describe('remove unused vars from destructured object', () => {
         {
           messages: [
             {
-              column: 27,
               line: 1,
               message:
                 "'unusedDestructured' is assigned a value but never used.",
               ruleId: 'no-unused-vars',
             },
             {
-              column: 12,
               line: 2,
               message: "'unused' is assigned a value but never used.",
               ruleId: 'no-unused-vars',
@@ -54,7 +52,6 @@ describe('remove unused vars from destructured object', () => {
         {
           messages: [
             {
-              column: 12,
               line: 2,
               message: "'unused' is assigned a value but never used.",
               ruleId: 'no-unused-vars',
@@ -68,6 +65,36 @@ describe('remove unused vars from destructured object', () => {
     `);
     const expected = dedent(`
       const { origin = {}, model } = object;
+    `);
+    const result = applyTransform(
+      { default: removeUnusedVars, parser: 'ts' },
+      { getNoUnusedVars },
+      { source },
+    );
+
+    expect(result).toBe(expected);
+  });
+
+  it('remove unused functions', () => {
+    // @ts-expect-error Test
+    const getNoUnusedVars: GetNoUnusedVars = () => {
+      return [
+        {
+          messages: [
+            {
+              line: 1,
+              message: "'unusedFunc' is assigned a value but never used.",
+              ruleId: 'no-unused-vars',
+            },
+          ],
+        },
+      ];
+    };
+    const source = dedent(`
+      var a; function unusedFunc() {}; console.log();
+    `);
+    const expected = dedent(`
+      var a;console.log();
     `);
     const result = applyTransform(
       { default: removeUnusedVars, parser: 'ts' },

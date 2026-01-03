@@ -435,7 +435,6 @@ describe('remove feature flags', () => {
       // This should be transformed (has feature flag)
       const d = [...(specialItems)];
     `);
-
     const result = applyTransform(
       { default: removeFeatureFlags, parser: 'ts' },
       { flags: ['FF_1234_STORY'] },
