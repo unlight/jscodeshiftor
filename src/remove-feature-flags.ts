@@ -1,5 +1,7 @@
 import jscodeshift, {
+  ASTNode,
   ASTPath,
+  Node,
   ObjectExpression,
   SpreadElement,
 } from 'jscodeshift';
@@ -174,6 +176,10 @@ export default <jscodeshift.Transform>(
         if (leftResult === true) {
           // flag && expression -> expression
           path.replace(path.value.right);
+
+          // path.node.right.properties; // 1
+          // path.parentPath.node; // is object expre 1.5 is spread
+          // path.parentPath.parentPath.node; // is object expre 2
         } else if (leftResult === false) {
           // false && expression -> false
           path.replace(j.booleanLiteral(false));
@@ -380,11 +386,7 @@ export default <jscodeshift.Transform>(
     // Clean up direct spread of array literals that can be inlined
     root.find(j.SpreadElement).forEach((path: ASTPath<SpreadElement>) => {
       const spreadElement = path.value;
-      const parent: unknown = path.parent.node;
-
-      if (!j.ArrayExpression.check(parent) && !j.CallExpression.check(parent)) {
-        return;
-      }
+      const parent = (path.parent as ASTPath).node;
 
       // Direct spread of array literal - inline it
       if (j.ArrayExpression.check(spreadElement.argument)) {
@@ -404,6 +406,18 @@ export default <jscodeshift.Transform>(
           const index = args.indexOf(spreadElement);
           if (index !== -1 && array.elements?.length > 0) {
             args.splice(index, 1, ...array.elements);
+          }
+        }
+      } else if (j.ObjectExpression.check(spreadElement.argument)) {
+        const parentObject = (path.parentPath as ASTPath).node;
+        if (j.ObjectExpression.check(parentObject)) {
+          const index = parentObject.properties.indexOf(spreadElement);
+          if (index !== -1) {
+            parentObject.properties.splice(
+              index,
+              1,
+              ...spreadElement.argument.properties,
+            );
           }
         }
       }

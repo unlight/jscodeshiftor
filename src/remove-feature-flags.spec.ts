@@ -78,7 +78,7 @@ describe('remove feature flags', () => {
     const expected = dedent(`
       const obj = {
         a: 1,
-        ...({ b: 2 }),
+        b: 2,
         d: 4
       };
     `);
@@ -438,6 +438,33 @@ describe('remove feature flags', () => {
     const result = applyTransform(
       { default: removeFeatureFlags, parser: 'ts' },
       { flags: ['FF_1234_STORY'] },
+      { source },
+    );
+
+    expect(result).toBe(expected);
+  });
+
+  it('merge spread objects', async () => {
+    const source = dedent(`
+    1 && {
+      a: 1,
+      ...(FF_1_A && {
+        x: true,
+      }),
+      b: 2
+    }
+    `);
+
+    const expected = dedent(`
+    1 && {
+      a: 1,
+      x: true,
+      b: 2
+    }
+    `);
+    const result = applyTransform(
+      { default: removeFeatureFlags, parser: 'ts' },
+      { flags: ['FF_1_A'] },
       { source },
     );
 
