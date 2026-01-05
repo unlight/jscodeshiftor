@@ -28,6 +28,7 @@ export default defineConfig(
     rules: {
       'max-params': [1, { max: 3 }],
       'no-unneeded-ternary': [1],
+      'no-unreachable': 1,
     },
     settings: {
       node: {

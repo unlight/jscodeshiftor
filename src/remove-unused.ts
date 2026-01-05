@@ -1,12 +1,13 @@
 import assert from 'node:assert';
-import { execSync } from 'node:child_process';
+import { execSync, ExecException } from 'node:child_process';
 
-import jscodeshift, { Identifier, Node } from 'jscodeshift';
+import jscodeshift, { Identifier } from 'jscodeshift';
 
-import { code } from './testing';
+import { findNodesAt } from './utils.ts';
 
 import type { ESLint } from 'eslint';
 type LintResult = Awaited<ReturnType<ESLint['lintText']>>;
+export type LintMessage = LintResult[number]['messages'][number];
 export type TransformOptions = {
   getNoUnusedVars?: FindUnusedArgs['getNoUnusedVars'];
   files: string[];
@@ -25,76 +26,56 @@ export default <jscodeshift.Transform>(
 
     assert.ifError(error);
 
-    if (!unusedParts || unusedParts.length === 0) {
-      return file.source;
-    }
-
     for (const unused of unusedParts) {
-      root.findVariableDeclarators().forEach(path => {
-        const { node } = path;
+      // Remove variables
+      if (unused.ruleId === 'no-unused-vars') {
+        root.findVariableDeclarators().forEach(path => {
+          const { node } = path;
 
-        if (j.ObjectPattern.check(node.id)) {
-          node.id.properties = node.id.properties.filter(prop => {
-            const shouldRemove =
-              'value' in prop &&
-              j.Identifier.check(prop.value) &&
-              isMatchVariable(prop.value, unused);
+          if (j.ObjectPattern.check(node.id)) {
+            node.id.properties = node.id.properties.filter(prop => {
+              const shouldRemove =
+                'value' in prop &&
+                j.Identifier.check(prop.value) &&
+                isMatchVariable(prop.value, unused);
 
-            return !shouldRemove;
-          });
-        }
-      });
-
-      root
-        .find(j.FunctionDeclaration, {
-          id: { name: unused.name },
-        })
-        .forEach(path => {
-          if (
-            j.Identifier.check(path.node.id) &&
-            isMatchVariable(path.node.id, unused)
-          ) {
-            j(path).remove();
+              return !shouldRemove;
+            });
           }
         });
+
+        root
+          .find(j.FunctionDeclaration, {
+            id: { name: unused.name },
+          })
+          .forEach(path => {
+            if (
+              j.Identifier.check(path.node.id) &&
+              isMatchVariable(path.node.id, unused)
+            ) {
+              j(path).remove();
+            }
+          });
+      }
+
+      // Remove unreachable code
+      if (unused.ruleId === 'no-unreachable') {
+        const paths = findNodesAt(j, root, unused);
+        paths.forEach(path => j(path).remove());
+      }
     }
 
     // Cleanup
+    if (unusedParts.some(x => x.ruleId === 'no-unused-vars')) {
+      root.findVariableDeclarators().forEach(path => {
+        const { node } = path;
 
-    root.findVariableDeclarators().forEach(path => {
-      const { node } = path;
-
-      // Remove empty in destructured object
-      if (j.ObjectPattern.check(node.id) && node.id.properties.length === 0) {
-        j(path).remove();
-      }
-    });
-
-    // Remove empty variable declarations
-    // root.find(j.VariableDeclaration).forEach(path => {
-    //   if (!path.node.declarations || path.node.declarations.length === 0) {
-    //     j(path).remove();
-    //   }
-    // });
-
-    // // Remove standalone semicolons that might be left behind
-    // root.find(j.EmptyStatement).forEach(path => {
-    //   j(path).remove();
-    // });
-
-    // // Clean up trailing commas in object/array patterns
-    // root.find(j.ObjectPattern).forEach(path => {
-    //   const properties = path.node.properties;
-    //   const lastProp = properties.at(-1);
-    //   if (
-    //     lastProp &&
-    //     lastProp.type === 'ObjectProperty' &&
-    //     !lastProp.computed
-    //   ) {
-    //     // Remove trailing comma if present
-    //     // jscodeshift handles this in toSource()
-    //   }
-    // });
+        // Remove empty in destructured object
+        if (j.ObjectPattern.check(node.id) && node.id.properties.length === 0) {
+          j(path).remove();
+        }
+      });
+    }
 
     return root.toSource({ lineTerminator: '\n' });
   }
@@ -109,8 +90,17 @@ type Unused = {
   column: number;
   file: string;
   line: number;
-  name: string;
-};
+} & (
+  | {
+      ruleId: 'no-unused-vars';
+      name: string;
+    }
+  | {
+      ruleId: 'no-unreachable';
+      endColumn: number;
+      endLine: number;
+    }
+);
 
 function findUnused(args: FindUnusedArgs) {
   const { files } = args;
@@ -121,14 +111,23 @@ function findUnused(args: FindUnusedArgs) {
     const unused: Unused[] = [];
 
     for (const result of results) {
-      if (!result.messages) continue;
+      const { filePath, messages } = result;
+      if (!messages) continue;
+      // Sort messages by line (descending) to avoid position issues
+      messages.sort((a, b) => b.line - a.line || b.column - a.column);
 
       for (const message of result.messages) {
-        const { column, line, message: text, ruleId } = message;
-        if (
-          ruleId === 'no-unused-vars' ||
-          ruleId?.endsWith('/no-unused-vars')
-        ) {
+        const {
+          column,
+          endColumn,
+          endLine,
+          line,
+          message: text,
+          ruleId,
+        } = message;
+        if (!ruleId) continue;
+
+        if (ruleId === 'no-unused-vars' || ruleId.endsWith('/no-unused-vars')) {
           // Extract variable name from message
           const varName = text.match(/'([^']+)'/)?.[1];
 
@@ -136,18 +135,29 @@ function findUnused(args: FindUnusedArgs) {
 
           unused.push({
             column,
-            file: result.filePath,
+            file: filePath,
             line,
             name: varName,
+            ruleId: 'no-unused-vars',
+          });
+        }
+
+        if (ruleId === 'no-unreachable' && endColumn && endLine) {
+          unused.push({
+            column,
+            endColumn,
+            endLine,
+            file: filePath,
+            line,
+            ruleId,
           });
         }
       }
     }
 
     return { result: unused };
-  } catch (error_) {
-    const error = error_ as Error;
-    return { error, message: error.message };
+  } catch (error) {
+    return { error: error as Error, message: (error as Error).message };
   }
 }
 
@@ -155,12 +165,11 @@ function getNoUnusedVars(files: string[]) {
   const fileList = files.map(f => `"${f}"`).join(' ');
   let output: string;
   try {
-    output = execSync(
-      `npx eslint --rule "*: 0" --rule "no-unused-vars: 1" --format json ${fileList}`,
-      { encoding: 'utf8' },
-    );
+    output = execSync(`npx eslint --format json ${fileList}`, {
+      encoding: 'utf8',
+    });
   } catch (error) {
-    output = error.stdout;
+    output = (error as ExecException).stdout || '';
   }
 
   return JSON.parse(output) as LintResult;
@@ -170,79 +179,7 @@ function isMatchVariable(node: Identifier | null, unused: Unused) {
   if (!node?.loc) return false;
   const { start } = node.loc;
 
-  return node.name === unused.name && unused.line === start.line;
+  return (
+    unused.line === start.line && 'name' in unused && unused.name === node.name
+  );
 }
-
-// Helper functions for removal
-// function removeSimpleVariable(decl) {
-//   const parentPath = decl.parentPath;
-//   const parentNode = parentPath.node;
-
-//   if (parentNode.declarations.length === 1) {
-//     // Remove entire declaration if this is the only declarator
-//     j(parentPath).remove();
-//   } else {
-//     // Remove just this declarator from the declaration
-//     parentNode.declarations = parentNode.declarations.filter(
-//       d => d !== decl.node,
-//     );
-//   }
-// }
-
-// function removeDestructuredVariable(decl) {
-//   if (decl.parentNode.type === 'ObjectPattern') {
-//     // Handle object destructuring
-//     const parentPattern = decl.parentNode;
-//     const properties = parentPattern.properties;
-
-//     // Remove the property from the object pattern
-//     const newProperties = properties.filter(prop => {
-//       if (prop.type === 'ObjectProperty' && prop.value.type === 'Identifier') {
-//         return prop.value.name !== decl.node.value.name;
-//       } else if (
-//         prop.type === 'RestElement' &&
-//         prop.argument.type === 'Identifier'
-//       ) {
-//         return prop.argument.name !== decl.node.name;
-//       }
-//       return true;
-//     });
-
-//     parentPattern.properties = newProperties;
-
-//     // If pattern is now empty, remove entire declaration
-//     if (newProperties.length === 0 && decl.declaratorNode) {
-//       const varDecl = decl.parentPath.node;
-//       const newDeclarators = varDecl.declarations.filter(
-//         d => d !== decl.declaratorNode,
-//       );
-
-//       if (newDeclarators.length === 0) {
-//         j(decl.parentPath).remove();
-//       } else {
-//         varDecl.declarations = newDeclarators;
-//       }
-//     }
-//   } else if (decl.parentNode.type === 'ArrayPattern') {
-//     // Handle array destructuring - replace with null placeholder
-//     const parentPattern = decl.parentNode;
-//     const elements = parentPattern.elements;
-
-//     elements[decl.index] = null;
-
-//     // Check if all elements are null
-//     const allNull = elements.every(el => el === null);
-//     if (allNull && decl.declaratorNode) {
-//       const varDecl = decl.parentPath.node;
-//       const newDeclarators = varDecl.declarations.filter(
-//         d => d !== decl.declaratorNode,
-//       );
-
-//       if (newDeclarators.length === 0) {
-//         j(decl.parentPath).remove();
-//       } else {
-//         varDecl.declarations = newDeclarators;
-//       }
-//     }
-//   }
-// }

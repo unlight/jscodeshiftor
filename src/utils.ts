@@ -1,8 +1,10 @@
 import {
+  ASTNode,
   ASTPath,
   Collection,
   FunctionDeclaration,
   JSCodeshift,
+  Node,
   VariableDeclaration,
 } from 'jscodeshift';
 
@@ -352,4 +354,113 @@ export function exportVarNameAsDefault(j: JSCodeshift, name) {
 export function withComments(to, from) {
   to.comments = from.comments;
   return to;
+}
+
+export function findNodesAtPosition(
+  j: JSCodeshift,
+  root: Collection,
+  pos: { line: number; column: number },
+) {
+  const nodes: ASTPath<Node>[] = [];
+  const { column, line } = pos;
+
+  root.find(j.Node).forEach(path => {
+    const { node } = path;
+
+    if (
+      node.loc &&
+      node.loc.start.line === line &&
+      node.loc.start.column === column
+    ) {
+      nodes.push(path);
+    }
+
+    // Also check if position is within the node's range
+    if (
+      (node as any).start !== undefined &&
+      (node as any).end !== undefined &&
+      (node as any).start <= column &&
+      (node as any).end >= column && // Additional check for line match
+      node.loc &&
+      node.loc.start.line === line
+    ) {
+      nodes.push(path);
+    }
+  });
+
+  return nodes;
+}
+
+export function findNodesAt(
+  j: JSCodeshift,
+  root: Collection,
+  pos: { line: number; column: number; endLine: number; endColumn: number },
+) {
+  const paths: ASTPath[] = [];
+
+  root.find(j.Node).forEach(path => {
+    const { node } = path;
+
+    if (
+      node.loc &&
+      node.loc.start.line >= pos.line &&
+      node.loc.start.column >= pos.column &&
+      node.loc.end.line <= pos.endLine &&
+      node.loc.end.column <= pos.endColumn
+    ) {
+      if (paths.length === 0) {
+        paths.push(path as ASTPath);
+
+        return;
+      }
+
+      if (!paths.some(p => findParent(j, path as ASTPath, p.node))) {
+        paths.push(path as ASTPath);
+      }
+    }
+  });
+
+  return paths;
+}
+
+/**
+ * Get the specific parent node that matches criteria
+ *
+ * @template T - The type of the target node
+ * @param j - The jscodeshift API
+ * @param path - The path to the current node
+ * @param target - The target parent to look for (node type, AST pattern, or predicate function)
+ * @param options - Options for matching
+ * @returns The matching parent path, or null if not found
+ */
+// eslint-disable-next-line max-params
+function findParent<T extends ASTNode>(
+  j: JSCodeshift,
+  path: ASTPath,
+  target: ((path: ASTNode) => boolean) | ASTNode,
+  options: {
+    includeSelf?: boolean;
+    maxDepth?: number;
+  } = {},
+): ASTPath<T> | null {
+  const { includeSelf = false, maxDepth = Infinity } = options;
+
+  let currentPath: ASTPath | null = includeSelf ? path : path.parentPath;
+  let depth = 0;
+
+  const filter =
+    typeof target === 'function' ? target : node => node === target;
+
+  // Traverse up the parent chain
+  while (currentPath && depth < maxDepth) {
+    if (j.match(currentPath.node, filter)) {
+      // @ts-expect-error Wat?
+      return currentPath;
+    }
+
+    currentPath = currentPath.parentPath;
+    depth++;
+  }
+
+  return null;
 }
