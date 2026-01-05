@@ -3,6 +3,7 @@ import { execSync, ExecException } from 'node:child_process';
 
 import jscodeshift, { Identifier } from 'jscodeshift';
 
+import { code, print, printCode } from './testing/index.ts';
 import { findNodesAt } from './utils.ts';
 
 import type { ESLint } from 'eslint';
@@ -42,6 +43,11 @@ export default <jscodeshift.Transform>(
 
               return !shouldRemove;
             });
+          } else if (
+            j.Identifier.check(node.id) &&
+            isMatchVariable(node.id, unused)
+          ) {
+            path.prune();
           }
         });
 

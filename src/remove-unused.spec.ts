@@ -123,4 +123,26 @@ describe('remove unused vars from destructured object', () => {
 
     expect(result).toBe(expected);
   });
+
+  it('unused variable init', () => {
+    const getNoUnusedVars = createGetNoUnusedVars({
+      column: 13,
+      line: 1,
+      message: "'state' is assigned a value but never used.",
+      ruleId: 'no-unused-vars',
+    });
+    const source = dedent(`
+      var a; const state = s.isBefore(), x = 1; var b;
+    `);
+    const expected = dedent(`
+      var a; const x = 1; var b;
+    `);
+    const result = applyTransform(
+      { default: removeUnusedVars, parser: 'ts' },
+      { getNoUnusedVars },
+      { source },
+    );
+
+    expect(result).toBe(expected);
+  });
 });
