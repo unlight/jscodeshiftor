@@ -145,4 +145,33 @@ describe('remove unused vars from destructured object', () => {
 
     expect(result).toBe(expected);
   });
+
+  it('unreachable double return', () => {
+    const getNoUnusedVars = createGetNoUnusedVars({
+      column: 3,
+      endColumn: 10,
+      endLine: 4,
+      line: 4,
+      ruleId: 'no-unreachable',
+    });
+    const source = dedent(`
+      function fn() {
+        return 1;
+
+        return;
+      }
+    `);
+    const expected = dedent(`
+      function fn() {
+        return 1;
+      }
+    `);
+    const result = applyTransform(
+      { default: removeUnusedVars, parser: 'ts' },
+      { getNoUnusedVars },
+      { source },
+    );
+
+    expect(result).toBe(expected);
+  });
 });

@@ -125,14 +125,17 @@ function findUnused(args: FindUnusedArgs) {
 
       for (const message of result.messages) {
         const {
-          column,
-          endColumn,
+          column: lintColumn,
+          endColumn: lintEndColumn,
           endLine,
           line,
           message: text,
           ruleId,
         } = message;
         if (!ruleId) continue;
+
+        const column = lintColumn - 1; // Correct position for jscodeshift
+        const endColumn = lintEndColumn ? lintEndColumn - 1 : undefined;
 
         if (ruleId === 'no-unused-vars' || ruleId.endsWith('/no-unused-vars')) {
           // Extract variable name from message
@@ -149,7 +152,7 @@ function findUnused(args: FindUnusedArgs) {
           });
         }
 
-        if (ruleId === 'no-unreachable' && endColumn && endLine) {
+        if (ruleId === 'no-unreachable' && endLine && endColumn) {
           unused.push({
             column,
             endColumn,
