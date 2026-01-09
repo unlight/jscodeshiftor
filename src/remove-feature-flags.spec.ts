@@ -446,21 +446,22 @@ describe('remove feature flags', () => {
 
   it('merge spread objects', async () => {
     const source = dedent(`
-    1 && {
-      a: 1,
-      ...(FF_1_A && {
-        x: true,
-      }),
-      b: 2
-    }
+      const a = {
+        ...{
+          a: 1,
+          ...(FF_1_A && {
+            x: true,
+          }),
+          b: 2,
+        },
+      };
     `);
-
     const expected = dedent(`
-    1 && {
-      a: 1,
-      x: true,
-      b: 2
-    }
+      const a = {
+        a: 1,
+        x: true,
+        b: 2
+      };
     `);
     const result = applyTransform(
       { default: removeFeatureFlags, parser: 'ts' },

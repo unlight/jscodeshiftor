@@ -1,7 +1,5 @@
 import jscodeshift, {
-  ASTNode,
   ASTPath,
-  Node,
   ObjectExpression,
   SpreadElement,
 } from 'jscodeshift';
@@ -9,6 +7,8 @@ import jscodeshift, {
 type TOptions = {
   flags: string;
 };
+
+export const parser = 'ts';
 
 export default <jscodeshift.Transform>(
   function removeFeatureFlags(file, api, options: TOptions) {
@@ -408,35 +408,6 @@ export default <jscodeshift.Transform>(
             args.splice(index, 1, ...array.elements);
           }
         }
-      } else if (j.ObjectExpression.check(spreadElement.argument)) {
-        const parentObject = (path.parentPath as ASTPath).node;
-        if (j.ObjectExpression.check(parentObject)) {
-          const index = parentObject.properties.indexOf(spreadElement);
-          if (index !== -1) {
-            parentObject.properties.splice(
-              index,
-              1,
-              ...spreadElement.argument.properties,
-            );
-          }
-        }
-      }
-    });
-
-    // Clean up false boolean literals in object spread contexts
-    root.find(j.ObjectExpression).forEach(path => {
-      const newProperties = path.value.properties.filter(prop => {
-        if (
-          j.SpreadElement.check(prop) &&
-          j.BooleanLiteral.check(prop.argument)
-        ) {
-          return !(prop.argument.value === false);
-        }
-        return true;
-      });
-
-      if (newProperties.length !== path.value.properties.length) {
-        path.value.properties = newProperties;
       }
     });
 
@@ -453,6 +424,45 @@ export default <jscodeshift.Transform>(
           // This was a feature flag variable that became false
           path.value.init = j.booleanLiteral(true); // Since flags are always true
         }
+      }
+    });
+
+    let count = 0;
+    while (++count <= 2) {
+      // Clean up direct spread of object literals that can be inlined
+      root.find(j.SpreadElement).forEach((path: ASTPath<SpreadElement>) => {
+        const spreadElement = path.value;
+
+        if (j.ObjectExpression.check(spreadElement.argument)) {
+          const parentObject = (path.parentPath as ASTPath).node;
+          if (j.ObjectExpression.check(parentObject)) {
+            const index = parentObject.properties.indexOf(spreadElement);
+            if (index !== -1) {
+              parentObject.properties.splice(
+                index,
+                1,
+                ...spreadElement.argument.properties,
+              );
+            }
+          }
+        }
+      });
+    }
+
+    // Clean up false boolean literals in object spread contexts
+    root.find(j.ObjectExpression).forEach(path => {
+      const newProperties = path.value.properties.filter(prop => {
+        if (
+          j.SpreadElement.check(prop) &&
+          j.BooleanLiteral.check(prop.argument)
+        ) {
+          return !(prop.argument.value === false);
+        }
+        return true;
+      });
+
+      if (newProperties.length !== path.value.properties.length) {
+        path.value.properties = newProperties;
       }
     });
 
