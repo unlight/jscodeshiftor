@@ -464,3 +464,14 @@ function findParent<T extends ASTNode>(
 
   return null;
 }
+
+export function getNodeStart(node?: unknown): number | undefined {
+  if (
+    node &&
+    typeof node === 'object' &&
+    'start' in node &&
+    typeof node.start === 'number'
+  ) {
+    return node.start;
+  }
+}

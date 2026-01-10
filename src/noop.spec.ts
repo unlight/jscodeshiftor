@@ -1,13 +1,20 @@
 import { expect } from 'expect';
+import { applyTransform } from 'jscodeshift/src/testUtils';
 import { it, describe } from 'mocha';
+import { dedent } from 'strip-indent';
 
 import plugin from './noop';
-import { runTransform } from './testing';
 
 describe('noop', () => {
-  it('noop', async () => {
-    const result = await runTransform(plugin, `const foo = 1`);
+  it('noop', () => {
+    const source = dedent(``);
+    const expected = dedent(``);
+    const result = applyTransform(
+      { default: plugin, parser: 'ts' },
+      {},
+      { source },
+    );
 
-    expect(result.lines).toEqual(['const foo = 1']);
+    expect(result).toBe(expected);
   });
 });
