@@ -7,6 +7,8 @@ Suggests code modifications and enhancements
 - `duplicate-object-keys` - Remove duplicated keys in object
 - `noop` - Do nothing
 - `use-strict` - Add 'use strict' directive for commonjs modules
+- `remove-feature-flags` - Remove feature flag
+- `remove-unused` - Remove unused variables
 
 ## Test Run
 
