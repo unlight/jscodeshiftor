@@ -182,7 +182,13 @@ function getNoUnusedVars(files: string[]) {
     output = (error as ExecException).stdout || '';
   }
 
-  return JSON.parse(output) as LintResult;
+  try {
+    return JSON.parse(output) as LintResult;
+  } catch (error) {
+    (error as any).cause = new Error(`Parse of ${output}`);
+
+    throw error;
+  }
 }
 
 function isMatchVariable(node: Identifier | null, unused: Unused) {
