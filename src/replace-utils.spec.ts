@@ -1,5 +1,4 @@
-import { expect } from 'expect';
-import { it } from 'mocha';
+import { expect, it } from 'vitest';
 
 import plugin from './replace-utils';
 import { runTransform } from './testing';

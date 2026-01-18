@@ -1,13 +1,11 @@
-import { expect } from 'expect';
 import { applyTransform } from 'jscodeshift/src/testUtils';
-import { describe, it } from 'mocha';
 import { dedent } from 'strip-indent';
+import { expect, it } from 'vitest';
 
 import transform from './remove-object-linebreaks.ts';
 
-describe('remove object linebreaks', () => {
-  it('should remove empty lines between simple properties', () => {
-    const source = dedent(`
+it('should remove empty lines between simple properties', () => {
+  const source = dedent(`
       ({
         a: 1,
 
@@ -15,23 +13,23 @@ describe('remove object linebreaks', () => {
 
         c: 3,
       })`);
-    const expected = dedent(`
+  const expected = dedent(`
       ({
         a: 1,
         b: 2,
         c: 3,
       })`);
-    const result = applyTransform(
-      { default: transform, parser: 'ts' },
-      {},
-      { source },
-    );
+  const result = applyTransform(
+    { default: transform, parser: 'ts' },
+    {},
+    { source },
+  );
 
-    expect(result).toBe(expected);
-  });
+  expect(result).toBe(expected);
+});
 
-  it('should not modify objects with complex values', () => {
-    const source = dedent(`
+it('should not modify objects with complex values', () => {
+  const source = dedent(`
       ({
         a: {
           nested: true,
@@ -40,17 +38,17 @@ describe('remove object linebreaks', () => {
           return 42;
         },
       })`);
-    const result = applyTransform(
-      { default: transform, parser: 'ts' },
-      {},
-      { source },
-    );
+  const result = applyTransform(
+    { default: transform, parser: 'ts' },
+    {},
+    { source },
+  );
 
-    expect(result).toBe(source);
-  });
+  expect(result).toBe(source);
+});
 
-  it('should preserve comments between properties', () => {
-    const source = dedent(`
+it('should preserve comments between properties', () => {
+  const source = dedent(`
   ({
     a: 1,
     // This is a comment
@@ -60,17 +58,17 @@ describe('remove object linebreaks', () => {
     c: 3,
   })`);
 
-    const result = applyTransform(
-      { default: transform, parser: 'ts' },
-      {},
-      { source },
-    );
+  const result = applyTransform(
+    { default: transform, parser: 'ts' },
+    {},
+    { source },
+  );
 
-    expect(result).toBe(source);
-  });
+  expect(result).toBe(source);
+});
 
-  it('should handle nested objects correctly', () => {
-    const source = dedent(`
+it('should handle nested objects correctly', () => {
+  const source = dedent(`
       const obj = {
         a: 1,
 
@@ -82,7 +80,7 @@ describe('remove object linebreaks', () => {
         },
         c: 3,
       };`);
-    const expected = dedent(`
+  const expected = dedent(`
       const obj = {
         a: 1,
         b: 2,
@@ -93,17 +91,17 @@ describe('remove object linebreaks', () => {
         c: 3,
       };`);
 
-    const result = applyTransform(
-      { default: transform, parser: 'ts' },
-      {},
-      { source },
-    );
+  const result = applyTransform(
+    { default: transform, parser: 'ts' },
+    {},
+    { source },
+  );
 
-    expect(result).toBe(expected);
-  });
+  expect(result).toBe(expected);
+});
 
-  it('should handle computed properties', () => {
-    const source = dedent(`
+it('should handle computed properties', () => {
+  const source = dedent(`
       ({
         a: 1,
 
@@ -111,23 +109,23 @@ describe('remove object linebreaks', () => {
 
         c: 3,
       })`);
-    const expected = dedent(`
+  const expected = dedent(`
       ({
         a: 1,
         [computed]: 2,
         c: 3,
       })`);
-    const result = applyTransform(
-      { default: transform, parser: 'ts' },
-      {},
-      { source },
-    );
+  const result = applyTransform(
+    { default: transform, parser: 'ts' },
+    {},
+    { source },
+  );
 
-    expect(result).toBe(expected);
-  });
+  expect(result).toBe(expected);
+});
 
-  it('should handle spread operator', () => {
-    const source = dedent(`
+it('should handle spread operator', () => {
+  const source = dedent(`
       ({
         ...rest,
 
@@ -135,24 +133,24 @@ describe('remove object linebreaks', () => {
 
         ...more,
       })`);
-    const expected = dedent(`
+  const expected = dedent(`
       ({
         ...rest,
         a: 1,
         ...more,
       })`);
 
-    const result = applyTransform(
-      { default: transform, parser: 'ts' },
-      {},
-      { source },
-    );
+  const result = applyTransform(
+    { default: transform, parser: 'ts' },
+    {},
+    { source },
+  );
 
-    expect(result).toBe(expected);
-  });
+  expect(result).toBe(expected);
+});
 
-  it('should handle methods and getters/setters', () => {
-    const source = dedent(`
+it('should handle methods and getters/setters', () => {
+  const source = dedent(`
       ({
         a: 1,
 
@@ -164,7 +162,7 @@ describe('remove object linebreaks', () => {
           return 42;
         },
       })`);
-    const expected = dedent(`
+  const expected = dedent(`
       ({
         a: 1,
         get value() {
@@ -174,45 +172,44 @@ describe('remove object linebreaks', () => {
           return 42;
         },
       })`);
-    const result = applyTransform(
-      { default: transform, parser: 'ts' },
-      {},
-      { source },
-    );
+  const result = applyTransform(
+    { default: transform, parser: 'ts' },
+    {},
+    { source },
+  );
 
-    expect(result).toBe(expected);
-  });
+  expect(result).toBe(expected);
+});
 
-  it('should not modify single-line objects', () => {
-    const source = dedent(`({ a: 1, b: 2, c: 3 })`);
-    const result = applyTransform(
-      { default: transform, parser: 'ts' },
-      {},
-      { source },
-    );
+it('should not modify single-line objects', () => {
+  const source = dedent(`({ a: 1, b: 2, c: 3 })`);
+  const result = applyTransform(
+    { default: transform, parser: 'ts' },
+    {},
+    { source },
+  );
 
-    expect(result).toBe(source);
-  });
+  expect(result).toBe(source);
+});
 
-  it('should handle edge cases with trailing commas', () => {
-    const source = dedent(`
+it('should handle edge cases with trailing commas', () => {
+  const source = dedent(`
         ({
           a: 1,
 
           b: 2,
 
         })`);
-    const expected = dedent(`
+  const expected = dedent(`
         ({
           a: 1,
           b: 2,
         })`);
-    const result = applyTransform(
-      { default: transform, parser: 'ts' },
-      {},
-      { source },
-    );
+  const result = applyTransform(
+    { default: transform, parser: 'ts' },
+    {},
+    { source },
+  );
 
-    expect(result).toBe(expected);
-  });
+  expect(result).toBe(expected);
 });

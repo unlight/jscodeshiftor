@@ -3,22 +3,19 @@
   "version": "0.0.0-dev",
   "license": "MIT",
   "main": "index.js",
-  "keywords": [
-    "jscodeshift",
-    "codemod"
-  ],
+  "keywords": ["jscodeshift", "codemod"],
   "bin": "./bin/cli.js",
   "scripts": {
     "test": "npm run eslint && npm run tscheck && npm run test:r",
-    "test:r": "node -r ts-node/register node_modules/mocha/bin/_mocha src/**/*.spec.ts",
-    "test:w": "npm run test:r -- --watch --watch-files src/**/*.ts",
+    "test:r": "vitest run",
+    "test:w": "vitest",
+    "test:cov": "vitest run --coverage",
     "lint": "npm run eslint && npm run tscheck",
     "eslint": "node node_modules/eslint/bin/eslint \"src/**/*.{ts,tsx}\"",
     "eslint:fix": "npm run eslint -- --fix",
     "tscheck": "tsc --noEmit",
     "tscheck:w": "npm run tscheck -- --watch",
-    "format:src": "prettier src --write",
-    "mocha": "node node_modules/mocha/bin/_mocha"
+    "format:src": "prettier src --write"
   },
   "dependencies": {
     "jscodeshift": "^17.3.0",
@@ -29,7 +26,6 @@
     "@babel/core": "^7.28.5",
     "@babel/preset-env": "^7.28.5",
     "@types/jscodeshift": "^17.3.0",
-    "@types/mocha": "^10.0.10",
     "@types/node": "^25.0.3",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
@@ -39,16 +35,16 @@
     "eslint-plugin-perfectionist": "^5.2.0",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-unicorn": "^62.0.0",
-    "expect": "^30.2.0",
     "globals": "^17.0.0",
     "jscodeshift-helper": "^1.1.0",
-    "mocha": "^11.7.5",
     "prettier": "^3.7.4",
     "recast": "^0.23.11",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "tslib": "^2.8.1",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.51.0"
+    "typescript-eslint": "^8.51.0",
+    "vitest": "^4.0.15",
+    "@vitest/coverage-v8": "^4.0.15"
   }
 }

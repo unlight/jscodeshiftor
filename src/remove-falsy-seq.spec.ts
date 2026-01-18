@@ -1,7 +1,6 @@
-import { expect } from 'expect';
 import { applyTransform } from 'jscodeshift/src/testUtils';
-import { it } from 'mocha';
 import { dedent } from 'strip-indent';
+import { expect, it } from 'vitest';
 
 import transform from './remove-falsy-seq.ts';
 
