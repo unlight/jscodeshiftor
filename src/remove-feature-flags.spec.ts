@@ -443,7 +443,7 @@ it('should not modify complex expressions in direct spreads', () => {
   expect(result).toBe(expected);
 });
 
-it('merge spread objects', async () => {
+it('merge spread objects', () => {
   const source = dedent(`
       const a = {
         ...{
@@ -462,6 +462,30 @@ it('merge spread objects', async () => {
         b: 2
       };
     `);
+  const result = applyTransform(
+    { default: removeFeatureFlags, parser: 'ts' },
+    { flags: ['FF_1_A'] },
+    { source },
+  );
+
+  expect(result).toBe(expected);
+});
+
+it('feature flag between condition 1', () => {
+  const source = dedent(`x && FF_1_A && (async () => tryToSend(id))`);
+  const expected = dedent(`x && (async () => tryToSend(id))`);
+  const result = applyTransform(
+    { default: removeFeatureFlags, parser: 'ts' },
+    { flags: ['FF_1_A'] },
+    { source },
+  );
+
+  expect(result).toBe(expected);
+});
+
+it('feature flag between condition 2', () => {
+  const source = dedent(`x && FF_1_A && y && (async () => tryToSend(id))`);
+  const expected = dedent(`x && y && (async () => tryToSend(id))`);
   const result = applyTransform(
     { default: removeFeatureFlags, parser: 'ts' },
     { flags: ['FF_1_A'] },

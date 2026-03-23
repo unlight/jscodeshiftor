@@ -170,6 +170,7 @@ export default <jscodeshift.Transform>(
     // Transform logical expressions
     root.find(j.LogicalExpression).forEach(path => {
       const leftResult = evaluateCondition(path.value.left);
+      const rightResult = evaluateCondition(path.value.right);
       const { operator } = path.value;
 
       if (operator === '&&') {
@@ -183,6 +184,11 @@ export default <jscodeshift.Transform>(
         } else if (leftResult === false) {
           // false && expression -> false
           path.replace(j.booleanLiteral(false));
+        } else if (
+          rightResult === true &&
+          j.LogicalExpression.check(path.parent.node)
+        ) {
+          path.parent.node.left = path.value.left;
         }
       } else if (operator === '||') {
         if (leftResult === true) {
