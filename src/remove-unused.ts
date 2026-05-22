@@ -3,7 +3,6 @@ import { ExecException, execSync } from 'node:child_process';
 
 import jscodeshift, { Identifier } from 'jscodeshift';
 
-import { code } from './testing/index.ts';
 import { isInsideNode, isParentOf } from './utils.ts';
 
 import type { ESLint } from 'eslint';
@@ -13,6 +12,15 @@ export type LintMessage = LintResult[number]['messages'][number];
 export type TransformOptions = {
   getNoUnusedVars?: FindUnusedArgs['getNoUnusedVars'];
   files: string[];
+};
+
+type LocNode = {
+  node: {
+    loc: {
+      start: { line: number; column: number };
+      end: { line: number; column: number };
+    };
+  };
 };
 
 export default <jscodeshift.Transform>(
@@ -68,7 +76,7 @@ export default <jscodeshift.Transform>(
       // Remove unreachable code
       if (unused.ruleId === 'no-unreachable') {
         // Collect all nodes completely inside the reported range
-        const insidePaths: any[] = [];
+        const insidePaths: Array<jscodeshift.ASTPath<jscodeshift.Node>> = [];
 
         root.find(j.Node).forEach(path => {
           if (isInsideNode(path.node, unused)) {
@@ -83,14 +91,14 @@ export default <jscodeshift.Transform>(
         );
 
         // Remove them in reverse source order (safest for multiple removals)
-        topPaths
+        (topPaths as LocNode[])
           .toSorted((a, b) => {
             // sort by start position descending
             const aStart = a.node.loc.start;
             const bStart = b.node.loc.start;
             return bStart.line - aStart.line || bStart.column - aStart.column;
           })
-          .forEach(path => j(path).remove());
+          .forEach(path => j(path as jscodeshift.ASTPath).remove());
       }
     }
 
@@ -204,7 +212,7 @@ function getNoUnusedVars(files: string[]) {
   try {
     return JSON.parse(output) as LintResult;
   } catch (error) {
-    (error as any).cause = new Error(`Parse of ${output}`);
+    (error as Error).cause = new Error(`Parse of ${output}`);
 
     throw error;
   }

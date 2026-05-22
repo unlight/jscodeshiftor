@@ -446,7 +446,10 @@ export function getNodeStart(node?: unknown): number | undefined {
   }
 }
 
-export function isInsideNode(node, pos): boolean {
+export function isInsideNode(
+  node: Node,
+  pos: { line: number; column: number; endLine: number; endColumn: number },
+): boolean {
   if (!node.loc) return false;
   const startOk =
     node.loc.start.line > pos.line ||
