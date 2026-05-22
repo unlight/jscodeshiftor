@@ -147,24 +147,28 @@ it('unused variable init', () => {
 
 it('unreachable double return', () => {
   const getNoUnusedVars = createGetNoUnusedVars({
-    column: 3,
-    endColumn: 10,
-    endLine: 4,
-    line: 4,
+    column: 9,
+    endColumn: 16,
+    endLine: 5,
+    line: 5,
+    message: 'Unreachable code.',
+    messageId: 'unreachableCode',
+    nodeType: 'ReturnStatement',
     ruleId: 'no-unreachable',
+    severity: 2,
   });
-  const source = dedent(`
-      function fn() {
+  const source = dedent(`// prettier-ignore
+function fn() {
         return 1;
 
         return;
       }
-    `);
-  const expected = dedent(`
-      function fn() {
-        return 1;
-      }
-    `);
+`);
+  const expected = dedent(`// prettier-ignore
+function fn() {
+  return 1;
+}
+`);
   const result = applyTransform(
     { default: removeUnusedVars, parser: 'ts' },
     { getNoUnusedVars },
@@ -172,4 +176,38 @@ it('unreachable double return', () => {
   );
 
   expect(result).toBe(expected);
+});
+
+it('unreachable statements', () => {
+  const getNoUnusedVars = createGetNoUnusedVars({
+    column: 13,
+    endColumn: 17,
+    endLine: 9,
+    line: 3,
+    message: 'Unreachable code.',
+    messageId: 'unreachableCode',
+    nodeType: 'VariableDeclaration',
+    ruleId: 'no-unreachable',
+    severity: 2,
+  });
+  const source = dedent(`// prettier-ignore
+export async function get(ids) {
+  return 1; let a; const rows = 1;
+  const index = indexBy('id', rows);
+
+  for (const key in events) {
+  }
+
+  return events;
+}`);
+
+  const result = applyTransform(
+    { default: removeUnusedVars, parser: 'ts' },
+    { getNoUnusedVars },
+    { source },
+  );
+  expect(result).toEqual(`// prettier-ignore
+export async function get(ids) {
+  return 1;
+}`);
 });

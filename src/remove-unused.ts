@@ -1,10 +1,10 @@
 import assert from 'node:assert';
-import { execSync, ExecException } from 'node:child_process';
+import { ExecException, execSync } from 'node:child_process';
 
 import jscodeshift, { Identifier } from 'jscodeshift';
 
-import { code, print, printCode } from './testing/index.ts';
-import { findNodesAt } from './utils.ts';
+import { code } from './testing/index.ts';
+import { isInsideNode, isParentOf } from './utils.ts';
 
 import type { ESLint } from 'eslint';
 
@@ -67,8 +67,30 @@ export default <jscodeshift.Transform>(
 
       // Remove unreachable code
       if (unused.ruleId === 'no-unreachable') {
-        const paths = findNodesAt(j, root, unused);
-        paths.forEach(path => j(path).remove());
+        // Collect all nodes completely inside the reported range
+        const insidePaths: any[] = [];
+
+        root.find(j.Node).forEach(path => {
+          if (isInsideNode(path.node, unused)) {
+            insidePaths.push(path);
+          }
+        });
+
+        // Keep only the top‑most nodes (i.e., remove children if parent is already in the set)
+        const topPaths = insidePaths.filter(
+          (p, i) =>
+            !insidePaths.some((other, j) => i !== j && isParentOf(other, p)),
+        );
+
+        // Remove them in reverse source order (safest for multiple removals)
+        topPaths
+          .toSorted((a, b) => {
+            // sort by start position descending
+            const aStart = a.node.loc.start;
+            const bStart = b.node.loc.start;
+            return bStart.line - aStart.line || bStart.column - aStart.column;
+          })
+          .forEach(path => j(path).remove());
       }
     }
 
@@ -125,17 +147,14 @@ function findUnused(args: FindUnusedArgs) {
 
       for (const message of result.messages) {
         const {
-          column: lintColumn,
-          endColumn: lintEndColumn,
+          column,
+          endColumn,
           endLine,
           line,
           message: text,
           ruleId,
         } = message;
         if (!ruleId) continue;
-
-        const column = lintColumn - 1; // Correct position for jscodeshift
-        const endColumn = lintEndColumn ? lintEndColumn - 1 : undefined;
 
         if (ruleId === 'no-unused-vars' || ruleId.endsWith('/no-unused-vars')) {
           // Extract variable name from message

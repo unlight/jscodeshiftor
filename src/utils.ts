@@ -8,6 +8,8 @@ import {
   VariableDeclaration,
 } from 'jscodeshift';
 
+import { code } from './testing';
+
 // https://github.com/JamieMason/codemods/blob/master/transforms/lib/helpers.js
 
 function isTopLevel(path: ASTPath) {
@@ -391,38 +393,6 @@ export function findNodesAtPosition(
   return nodes;
 }
 
-export function findNodesAt(
-  j: JSCodeshift,
-  root: Collection,
-  pos: { line: number; column: number; endLine: number; endColumn: number },
-) {
-  const paths: ASTPath[] = [];
-
-  root.find(j.Node).forEach(path => {
-    const { node } = path;
-
-    if (
-      node.loc &&
-      node.loc.start.line >= pos.line &&
-      node.loc.start.column >= pos.column &&
-      node.loc.end.line <= pos.endLine &&
-      node.loc.end.column <= pos.endColumn
-    ) {
-      if (paths.length === 0) {
-        paths.push(path as ASTPath);
-
-        return;
-      }
-
-      if (!paths.some(p => findParent(j, path as ASTPath, p.node))) {
-        paths.push(path as ASTPath);
-      }
-    }
-  });
-
-  return paths;
-}
-
 /**
  * Get the specific parent node that matches criteria
  *
@@ -474,4 +444,27 @@ export function getNodeStart(node?: unknown): number | undefined {
   ) {
     return node.start;
   }
+}
+
+export function isInsideNode(node, pos): boolean {
+  if (!node.loc) return false;
+  const startOk =
+    node.loc.start.line > pos.line ||
+    (node.loc.start.line === pos.line &&
+      node.loc.start.column + 1 >= pos.column);
+  const endOk =
+    node.loc.end.line < pos.endLine ||
+    (node.loc.end.line === pos.endLine &&
+      node.loc.end.column + 1 <= pos.endColumn);
+  return startOk && endOk;
+}
+
+// Returns true if `parent` is an ancestor of `child`
+export function isParentOf(parent, child) {
+  let current = child.parentPath;
+  while (current) {
+    if (current === parent) return true;
+    current = current.parentPath;
+  }
+  return false;
 }
