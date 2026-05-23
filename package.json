@@ -3,10 +3,7 @@
   "version": "0.0.0-dev",
   "license": "MIT",
   "main": "index.js",
-  "keywords": [
-    "jscodeshift",
-    "codemod"
-  ],
+  "keywords": ["jscodeshift", "codemod"],
   "bin": "./bin/cli.js",
   "scripts": {
     "test": "npm run eslint && npm run tscheck && npm run test:r",
@@ -16,6 +13,7 @@
     "lint": "npm run eslint && npm run tscheck",
     "eslint": "node node_modules/eslint/bin/eslint \"src/**/*.{ts,tsx}\"",
     "eslint:fix": "npm run eslint -- --fix",
+    "eslint:w": "onchange * -v -k -i -- npm run eslint",
     "tscheck": "tsc --noEmit",
     "tscheck:w": "npm run tscheck -- --watch",
     "format:src": "prettier src --write"

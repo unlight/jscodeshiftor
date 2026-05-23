@@ -5,23 +5,15 @@ import jscodeshift, { Identifier } from 'jscodeshift';
 
 import { isInsideNode, isParentOf } from './utils.ts';
 
-import type { ESLint } from 'eslint';
+import type {
+  FindUnusedArgs,
+  LintResult,
+  LocNode,
+  TransformOptions,
+  Unused,
+} from './types.ts';
 
-type LintResult = Awaited<ReturnType<ESLint['lintText']>>;
-export type LintMessage = LintResult[number]['messages'][number];
-export type TransformOptions = {
-  getNoUnusedVars?: FindUnusedArgs['getNoUnusedVars'];
-  files: string[];
-};
-
-type LocNode = {
-  node: {
-    loc: {
-      start: { line: number; column: number };
-      end: { line: number; column: number };
-    };
-  };
-};
+export type { LintMessage, TransformOptions } from './types.ts';
 
 export default <jscodeshift.Transform>(
   function removeUnusedVars(file, api, options: TransformOptions) {
@@ -116,27 +108,6 @@ export default <jscodeshift.Transform>(
 
     return root.toSource({ lineTerminator: '\n' });
   }
-);
-
-type FindUnusedArgs = {
-  files: string[];
-  getNoUnusedVars?: typeof getNoUnusedVars;
-};
-
-type Unused = {
-  column: number;
-  file: string;
-  line: number;
-} & (
-  | {
-      ruleId: 'no-unused-vars';
-      name: string;
-    }
-  | {
-      ruleId: 'no-unreachable';
-      endColumn: number;
-      endLine: number;
-    }
 );
 
 function findUnused(args: FindUnusedArgs) {

@@ -4,9 +4,7 @@ import jscodeshift, {
   SpreadElement,
 } from 'jscodeshift';
 
-type TOptions = {
-  flags: string;
-};
+import type { TOptions } from './types.ts';
 
 export const parser = 'ts';
 

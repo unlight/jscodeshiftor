@@ -24,10 +24,7 @@ export function api(options): jscodeshift.API {
   };
 }
 
-type File = {
-  path: string;
-  source: string;
-};
+import type { File } from '../types.ts';
 
 export async function runTransform(
   transform: jscodeshift.Transform,

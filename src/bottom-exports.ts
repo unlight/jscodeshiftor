@@ -4,12 +4,13 @@ import jscodeshift from 'jscodeshift';
 
 import { describe, printCode } from './testing';
 
+import type { ExportSpecifier } from './types.ts';
+
 export const parser = 'acorn';
 
 export default <jscodeshift.Transform>function (file, api) {
   const j = api.jscodeshift;
   const root = j(file.source);
-  type ExportSpecifier = any;
 
   const exportNames: string[] = [];
   const exportSpecifiers: ExportSpecifier[] = [];
