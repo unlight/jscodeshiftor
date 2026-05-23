@@ -3,7 +3,6 @@ import 'eslint-plugin-only-warn';
 import pluginJs from '@eslint/js';
 import { globalIgnores, defineConfig } from 'eslint/config';
 import * as importx from 'eslint-plugin-import-x';
-import perfectionist from 'eslint-plugin-perfectionist';
 import prettier from 'eslint-plugin-prettier/recommended';
 import unicorn from 'eslint-plugin-unicorn';
 import globals from 'globals';
@@ -75,20 +74,6 @@ export default defineConfig(
               position: 'after',
             },
           ],
-        },
-      ],
-    },
-  },
-  {
-    plugins: {
-      perfectionist,
-    },
-    rules: {
-      'perfectionist/sort-objects': [
-        'warn',
-        {
-          order: 'asc',
-          type: 'natural',
         },
       ],
     },

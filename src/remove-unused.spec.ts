@@ -2,9 +2,9 @@ import { applyTransform } from 'jscodeshift/src/testUtils';
 import { dedent } from 'strip-indent';
 import { it, expect } from 'vitest';
 
-import removeUnusedVars, { type LintMessage } from './remove-unused.ts';
+import removeUnusedVars from './remove-unused.ts';
 
-const createGetNoUnusedVars = (...messages: Partial<LintMessage>[]) => {
+const createGetNoUnusedVars = (...messages: Record<string, unknown>[]) => {
   return function getNoUnusedVars() {
     return [{ messages }];
   };

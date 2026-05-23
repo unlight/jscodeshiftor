@@ -3,11 +3,7 @@
   "version": "0.0.0-dev",
   "license": "MIT",
   "main": "index.js",
-  "keywords": [
-    "jscodeshift",
-    "codemod"
-  ],
-  "bin": "./bin/cli.js",
+  "keywords": ["jscodeshift", "codemod"],
   "scripts": {
     "test": "npm run eslint && npm run tscheck && npm run test:r",
     "test:r": "vitest run",
@@ -29,6 +25,7 @@
   "devDependencies": {
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.5",
+    "@eslint/js": "^10.0.1",
     "@types/jscodeshift": "^17.3.0",
     "@types/node": "^25.9.1",
     "@vitest/coverage-v8": "^4.1.7",
@@ -37,7 +34,6 @@
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-only-warn": "^1.2.1",
-    "eslint-plugin-perfectionist": "^5.9.0",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-unicorn": "^64.0.0",
     "globals": "^17.6.0",

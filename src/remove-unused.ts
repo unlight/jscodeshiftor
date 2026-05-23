@@ -28,7 +28,7 @@ export default <jscodeshift.Transform>(
 
     assert.ifError(error);
 
-    for (const unused of unusedParts) {
+    for (const unused of unusedParts || []) {
       // Remove variables
       if (unused.ruleId === 'no-unused-vars') {
         root.findVariableDeclarators().forEach(path => {
@@ -95,7 +95,7 @@ export default <jscodeshift.Transform>(
     }
 
     // Cleanup
-    if (unusedParts.some(x => x.ruleId === 'no-unused-vars')) {
+    if ((unusedParts || []).some(x => x.ruleId === 'no-unused-vars')) {
       root.findVariableDeclarators().forEach(path => {
         const { node } = path;
 

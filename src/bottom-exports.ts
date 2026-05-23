@@ -74,6 +74,8 @@ export default <jscodeshift.Transform>function (file, api) {
 
   ok(exportNamedDeclaration.specifiers);
 
+  const specifiers = exportNamedDeclaration.specifiers;
+
   const exportNameSpecifiers = exportNames.map(name =>
     j.exportSpecifier.from({
       exported: j.identifier(name),
@@ -81,10 +83,7 @@ export default <jscodeshift.Transform>function (file, api) {
     }),
   );
 
-  exportNamedDeclaration.specifiers.push(
-    ...exportSpecifiers,
-    ...exportNameSpecifiers,
-  );
+  specifiers.push(...exportSpecifiers, ...exportNameSpecifiers);
 
   const exportDefaultDeclaration = root.find(j.ExportDefaultDeclaration);
 
@@ -97,7 +96,7 @@ export default <jscodeshift.Transform>function (file, api) {
 
   program.body.push(...exportDefault);
 
-  if (exportNamedDeclaration.specifiers?.length) {
+  if (specifiers && specifiers.length > 0) {
     program.body.push(exportNamedDeclaration);
   }
 
