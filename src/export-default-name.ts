@@ -3,20 +3,24 @@ import namify from 'namify';
 
 import { getTopLevelVarNames, withComments } from './utils';
 
+import type { VariableDeclaration } from 'jscodeshift';
+
+const toValidName = namify as (s: string) => string;
+
 export default <jscodeshift.Transform>function (file, api) {
   const j = api.jscodeshift;
   const root = j(file.source);
   let nameParts = file.path.replaceAll('\\', '/').split('/').filter(Boolean);
   const fileName = nameParts.at(-1)?.split('.').slice(0, -1).join('.');
   if (!fileName) return file.source;
-  nameParts = [...nameParts.slice(0, -1), namify(fileName)];
+  nameParts = [...nameParts.slice(0, -1), toValidName(fileName)];
   const getDefaultUniqueName = () => {
     for (let index = 1; index <= nameParts.length; index++) {
-      const candidateName = namify(nameParts.slice(-index).join(' '));
+      const candidateName = toValidName(nameParts.slice(-index).join(' '));
       if (!topLevelVars.includes(candidateName)) return candidateName;
     }
 
-    return namify(
+    return toValidName(
       nameParts.slice(-1).join(' ') +
         ' ' +
         Math.random().toString(36).slice(2, 5),
@@ -41,11 +45,11 @@ export default <jscodeshift.Transform>function (file, api) {
       if (!declaration.id) {
         declaration.id = j.identifier(getDefaultUniqueName());
       }
-      const name = declaration.id.name;
+      const name = declaration.id.name as string;
       withComments(declaration, node);
 
       path.replace(declaration);
-      path.insertAfter(defaultDeclaration(name as string));
+      path.insertAfter(defaultDeclaration(name));
     }
 
     if (
@@ -62,7 +66,7 @@ export default <jscodeshift.Transform>function (file, api) {
             ),
           ]),
           node,
-        ),
+        ) as VariableDeclaration,
       );
 
       path.insertAfter(defaultDeclaration());
@@ -78,7 +82,7 @@ export default <jscodeshift.Transform>function (file, api) {
             j.variableDeclarator(declaration.left, declaration.right),
           ]),
           node,
-        ),
+        ) as VariableDeclaration,
       );
 
       path.insertAfter(defaultDeclaration(declaration.left.name));

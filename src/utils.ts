@@ -1,7 +1,8 @@
 import {
-  ASTNode,
   ASTPath,
+  ClassDeclaration,
   Collection,
+  ExportDefaultDeclaration,
   FunctionDeclaration,
   JSCodeshift,
   Node,
@@ -11,7 +12,8 @@ import {
 // https://github.com/JamieMason/codemods/blob/master/transforms/lib/helpers.js
 
 function isTopLevel(path: ASTPath) {
-  return path.parent.value.type === 'Program';
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  return path.parentPath?.node.type === 'Program';
 }
 
 export function getTopLevelVariables(j: JSCodeshift, collection: Collection) {
@@ -91,9 +93,10 @@ export function getNamedExportedClassNames(
   const identifiers: string[] = [];
 
   for (const path of getNamedExportedClasses(j, collection)) {
-    const exportNamedDeclaration: any = path.value;
-    if (exportNamedDeclaration.declaration?.id) {
-      identifiers.push(exportNamedDeclaration.declaration.id.name);
+    const exportNamedDeclaration = path.value;
+    const declaration = exportNamedDeclaration.declaration;
+    if (declaration?.type === 'ClassDeclaration' && declaration.id) {
+      identifiers.push(declaration.id.name as string);
     }
   }
 
@@ -121,9 +124,10 @@ export function getNamedExportedFunctionNames(
   const identifiers: string[] = [];
 
   for (const path of getNamedExportedFunctions(j, collection)) {
-    const exportNamedDeclaration: any = path.value;
-    if (exportNamedDeclaration.declaration?.id) {
-      identifiers.push(exportNamedDeclaration.declaration.id.name);
+    const exportNamedDeclaration = path.value;
+    const declaration = exportNamedDeclaration.declaration;
+    if (declaration?.type === 'FunctionDeclaration' && declaration.id) {
+      identifiers.push(declaration.id.name as string);
     }
   }
 
@@ -133,7 +137,7 @@ export function getNamedExportedFunctionNames(
 export function getExportsByClassName(
   j: JSCodeshift,
   collection: Collection,
-  className,
+  className: string,
 ) {
   return collection.find(j.ExportNamedDeclaration, {
     declaration: {
@@ -268,12 +272,12 @@ export function getTopLevelVarNames(j: JSCodeshift, collection: Collection) {
   ];
 }
 
-export function exportClass(j: JSCodeshift, path: any) {
+export function exportClass(j: JSCodeshift, path: ASTPath<ClassDeclaration>) {
   const classDeclaration = path.value;
 
   return j.exportNamedDeclaration(
     j.classDeclaration(
-      j.identifier(classDeclaration.id.name),
+      j.identifier(classDeclaration.id!.name as string),
       classDeclaration.body,
       classDeclaration.superClass,
     ),
@@ -336,23 +340,33 @@ export function exportVariable(
   );
 }
 
-export function exportDefaultAsNamed(j: JSCodeshift, path, name) {
+export function exportDefaultAsNamed(
+  j: JSCodeshift,
+  path: ASTPath<ExportDefaultDeclaration>,
+  name: string,
+) {
   const exportDefaultDeclaration = path.value;
   const variableName = j.identifier(name);
-  const variableValue = exportDefaultDeclaration.declaration;
   return j.exportNamedDeclaration(
     j.variableDeclaration('const', [
-      j.variableDeclarator(variableName, variableValue),
+      j.variableDeclarator(
+        variableName,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+        exportDefaultDeclaration.declaration as any,
+      ),
     ]),
   );
 }
 
-export function exportVarNameAsDefault(j: JSCodeshift, name) {
+export function exportVarNameAsDefault(j: JSCodeshift, name: string) {
   return j.exportDefaultDeclaration(j.identifier(name));
 }
 
-export function withComments(to, from) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function withComments(to: any, from: any) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
   to.comments = from.comments;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return to;
 }
 
@@ -376,11 +390,12 @@ export function findNodesAtPosition(
     }
 
     // Also check if position is within the node's range
+    const nodeAny = node as unknown as { start?: number; end?: number };
     if (
-      (node as any).start !== undefined &&
-      (node as any).end !== undefined &&
-      (node as any).start <= column &&
-      (node as any).end >= column && // Additional check for line match
+      nodeAny.start !== undefined &&
+      nodeAny.end !== undefined &&
+      nodeAny.start <= column &&
+      nodeAny.end >= column && // Additional check for line match
       node.loc &&
       node.loc.start.line === line
     ) {
@@ -389,59 +404,6 @@ export function findNodesAtPosition(
   });
 
   return nodes;
-}
-
-/**
- * Get the specific parent node that matches criteria
- *
- * @template T - The type of the target node
- * @param j - The jscodeshift API
- * @param path - The path to the current node
- * @param target - The target parent to look for (node type, AST pattern, or predicate function)
- * @param options - Options for matching
- * @returns The matching parent path, or null if not found
- */
-// eslint-disable-next-line max-params
-function findParent<T extends ASTNode>(
-  j: JSCodeshift,
-  path: ASTPath,
-  target: ((path: ASTNode) => boolean) | ASTNode,
-  options: {
-    includeSelf?: boolean;
-    maxDepth?: number;
-  } = {},
-): ASTPath<T> | null {
-  const { includeSelf = false, maxDepth = Infinity } = options;
-
-  let currentPath: ASTPath | null = includeSelf ? path : path.parentPath;
-  let depth = 0;
-
-  const filter =
-    typeof target === 'function' ? target : node => node === target;
-
-  // Traverse up the parent chain
-  while (currentPath && depth < maxDepth) {
-    if (j.match(currentPath.node, filter)) {
-      // @ts-expect-error Wat?
-      return currentPath;
-    }
-
-    currentPath = currentPath.parentPath;
-    depth++;
-  }
-
-  return null;
-}
-
-export function getNodeStart(node?: unknown): number | undefined {
-  if (
-    node &&
-    typeof node === 'object' &&
-    'start' in node &&
-    typeof node.start === 'number'
-  ) {
-    return node.start;
-  }
 }
 
 export function isInsideNode(
@@ -461,11 +423,25 @@ export function isInsideNode(
 }
 
 // Returns true if `parent` is an ancestor of `child`
-export function isParentOf(parent, child) {
-  let current = child.parentPath;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isParentOf(parent: ASTPath<any>, child: ASTPath<any>) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  let current: ASTPath | null = child.parentPath;
   while (current) {
     if (current === parent) return true;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     current = current.parentPath;
   }
   return false;
+}
+
+export function getNodeStart(node?: Node): number | undefined {
+  if (
+    node &&
+    typeof node === 'object' &&
+    'start' in node &&
+    typeof node.start === 'number'
+  ) {
+    return node.start;
+  }
 }

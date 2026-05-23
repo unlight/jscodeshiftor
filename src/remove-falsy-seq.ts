@@ -9,9 +9,11 @@ export default <jscodeshift.Transform>function (file, api) {
   const seqImports = getImportsByPackageName(j, root, '@noodoo/seq')
     .find(j.ImportDefaultSpecifier)
     .filter(path => j.Identifier.check(path.node.local))
-    .map(path => path.get('local'))
+    .map(path => path.get('local') as ASTPath)
     .nodes()
-    .map(local => j.Identifier.check(local) && local.name);
+    .map(local => {
+      if (j.Identifier.check(local)) return local.name;
+    });
 
   const seqName = seqImports[0];
   if (!seqName) return file.source;
@@ -25,7 +27,9 @@ export default <jscodeshift.Transform>function (file, api) {
     )
     .paths()
     .flatMap(callPath =>
-      callPath.node.arguments.map((_, i) => callPath.get('arguments', i)),
+      callPath.node.arguments.map(
+        (_, i) => callPath.get('arguments', i) as ASTPath,
+      ),
     )
     .filter(
       (argPath: ASTPath) =>
