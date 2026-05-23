@@ -8,8 +8,6 @@ import {
   VariableDeclaration,
 } from 'jscodeshift';
 
-import { code } from './testing';
-
 // https://github.com/JamieMason/codemods/blob/master/transforms/lib/helpers.js
 
 function isTopLevel(path: ASTPath) {

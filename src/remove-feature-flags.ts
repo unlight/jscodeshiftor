@@ -182,11 +182,12 @@ export default <jscodeshift.Transform>(
         } else if (leftResult === false) {
           // false && expression -> false
           path.replace(j.booleanLiteral(false));
-        } else if (
-          rightResult === true &&
-          j.LogicalExpression.check(path.parent.node)
-        ) {
-          path.parent.node.left = path.value.left;
+        } else if (rightResult === true && path.parent) {
+          const parent = path.parent as { node: unknown };
+          const parentNode = parent.node;
+          if (j.LogicalExpression.check(parentNode)) {
+            parentNode.left = path.value.left;
+          }
         }
       } else if (operator === '||') {
         if (leftResult === true) {
@@ -270,10 +271,11 @@ export default <jscodeshift.Transform>(
       path.value.properties = newProperties;
     });
 
-    // Handle spread elements in arrays and function calls
+    // Handle SpreadElement in arrays and function calls
     root.find(j.SpreadElement).forEach((path: ASTPath<SpreadElement>) => {
       const spreadElement = path.value;
-      const parent: unknown = path.parent?.node;
+      const parentPath = path.parent as ASTPath | undefined;
+      const parent = parentPath?.node;
 
       // Only handle spread elements in ArrayExpression or CallExpression
       if (!j.ArrayExpression.check(parent) && !j.CallExpression.check(parent)) {
@@ -301,10 +303,14 @@ export default <jscodeshift.Transform>(
               }
             } else if (j.CallExpression.check(parent)) {
               // In function call: replace spread with array elements as arguments
-              const parentArgs = parent.arguments as any[];
+              const parentArgs = parent.arguments;
               const index = parentArgs.indexOf(spreadElement);
               if (index !== -1 && elements && elements.length > 0) {
-                parentArgs.splice(index, 1, ...elements);
+                parentArgs.splice(
+                  index,
+                  1,
+                  ...(elements.filter(e => e !== null) as SpreadElement[]),
+                );
               }
             }
           } else {
@@ -326,10 +332,14 @@ export default <jscodeshift.Transform>(
                 parentElements.splice(index, 1);
               }
             } else if (j.CallExpression.check(parent)) {
-              const parentArgs = parent.arguments as any[];
+              const parentArgs = parent.arguments;
               const index = parentArgs.indexOf(spreadElement);
               if (index !== -1 && elements && elements.length > 0) {
-                parentArgs.splice(index, 1, ...elements);
+                parentArgs.splice(
+                  index,
+                  1,
+                  ...(elements.filter(e => e !== null) as SpreadElement[]),
+                );
               } else if (index !== -1 && elements && elements.length === 0) {
                 // Empty array - remove the spread entirely
                 parentArgs.splice(index, 1);
@@ -362,10 +372,14 @@ export default <jscodeshift.Transform>(
               parentElements.splice(index, 1, ...elements);
             }
           } else if (j.CallExpression.check(parent)) {
-            const parentArgs = parent.arguments as any[];
+            const parentArgs = parent.arguments;
             const index = parentArgs.indexOf(spreadElement);
             if (index !== -1 && elements && elements.length > 0) {
-              parentArgs.splice(index, 1, ...elements);
+              parentArgs.splice(
+                index,
+                1,
+                ...(elements.filter(e => e !== null) as SpreadElement[]),
+              );
             }
           }
         } else if (conditionResult === false) {
@@ -390,7 +404,8 @@ export default <jscodeshift.Transform>(
     // Clean up direct spread of array literals that can be inlined
     root.find(j.SpreadElement).forEach((path: ASTPath<SpreadElement>) => {
       const spreadElement = path.value;
-      const parent = (path.parent as ASTPath).node;
+      const parentPath = path.parent as ASTPath;
+      const parent = parentPath.node;
 
       // Direct spread of array literal - inline it
       if (j.ArrayExpression.check(spreadElement.argument)) {
@@ -406,10 +421,14 @@ export default <jscodeshift.Transform>(
             elements.splice(index, 1, ...array.elements);
           }
         } else if (j.CallExpression.check(parent)) {
-          const args = parent.arguments as any[];
+          const args = parent.arguments;
           const index = args.indexOf(spreadElement);
           if (index !== -1 && array.elements?.length > 0) {
-            args.splice(index, 1, ...array.elements);
+            args.splice(
+              index,
+              1,
+              ...(array.elements.filter(e => e !== null) as SpreadElement[]),
+            );
           }
         }
       }

@@ -1,15 +1,17 @@
 import jscodeshift from 'jscodeshift';
 import { print } from 'recast';
 
-export function printCode(...args: any[]) {
+import type { File } from '../types.ts';
+
+export function printCode(...args: unknown[]) {
   args.forEach(arg => console.log(code(arg)));
 }
 
-export function code(ast: any) {
-  return print(ast).code;
+export function code(ast: unknown) {
+  return print(ast as Parameters<typeof print>[0]).code;
 }
 
-export function api(options): jscodeshift.API {
+export function api(options: { parser?: string }): jscodeshift.API {
   let j = jscodeshift;
 
   if (options.parser) {
@@ -23,8 +25,6 @@ export function api(options): jscodeshift.API {
     stats: () => {},
   };
 }
-
-import type { File } from '../types.ts';
 
 export async function runTransform(
   transform: jscodeshift.Transform,

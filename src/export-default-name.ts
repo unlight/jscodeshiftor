@@ -1,15 +1,15 @@
 import jscodeshift from 'jscodeshift';
 import namify from 'namify';
 
-import { prettyPrint, print, printCode } from './testing';
 import { getTopLevelVarNames, withComments } from './utils';
 
-export default <jscodeshift.Transform>function (file, api, options) {
+export default <jscodeshift.Transform>function (file, api) {
   const j = api.jscodeshift;
   const root = j(file.source);
   let nameParts = file.path.replaceAll('\\', '/').split('/').filter(Boolean);
-  const fileName = nameParts.at(-1)?.split('.').slice(0, -1).join('.')!;
-  nameParts = nameParts.slice(0, -1).concat(namify(fileName));
+  const fileName = nameParts.at(-1)?.split('.').slice(0, -1).join('.');
+  if (!fileName) return file.source;
+  nameParts = [...nameParts.slice(0, -1), namify(fileName)];
   const getDefaultUniqueName = () => {
     for (let index = 1; index <= nameParts.length; index++) {
       const candidateName = namify(nameParts.slice(-index).join(' '));
@@ -23,7 +23,7 @@ export default <jscodeshift.Transform>function (file, api, options) {
     );
   };
 
-  const defaultDeclaration = (name: string = '') => {
+  const defaultDeclaration = (name = '') => {
     if (!name) name = getDefaultUniqueName();
     return j.exportDefaultDeclaration(j.identifier(name));
   };

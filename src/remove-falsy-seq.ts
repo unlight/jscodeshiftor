@@ -6,13 +6,14 @@ export default <jscodeshift.Transform>function (file, api) {
   const j = api.jscodeshift;
   const root = j(file.source);
 
-  const [seqName] = getImportsByPackageName(j, root, '@noodoo/seq')
+  const seqImports = getImportsByPackageName(j, root, '@noodoo/seq')
     .find(j.ImportDefaultSpecifier)
     .filter(path => j.Identifier.check(path.node.local))
     .map(path => path.get('local'))
     .nodes()
     .map(local => j.Identifier.check(local) && local.name);
 
+  const seqName = seqImports[0];
   if (!seqName) return file.source;
 
   root

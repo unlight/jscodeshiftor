@@ -1,33 +1,38 @@
-import jscodeshift from 'jscodeshift';
+import jscodeshift, {
+  ASTPath,
+  JSCodeshift,
+  Literal,
+  Program,
+} from 'jscodeshift';
 
-export default <jscodeshift.Transform>function transformer(fileInfo, api) {
-  const j = api.jscodeshift;
+function transformer(fileInfo: jscodeshift.FileInfo, api: jscodeshift.API) {
+  const j: JSCodeshift = api.jscodeshift;
   const root = j(fileInfo.source);
 
-  // Check if the file contains import or export statements
-  const hasImportOrExport =
+  const hasImportOrExport: boolean =
     root.find(j.ImportDeclaration).length > 0 ||
     root.find(j.ExportNamedDeclaration).length > 0 ||
     root.find(j.ExportDefaultDeclaration).length > 0 ||
     root.find(j.ExportAllDeclaration).length > 0;
 
-  // If the file is not in ESM format, check for 'use strict'
   if (!hasImportOrExport) {
-    const topLevelStatements = root.get('program', 'body').value;
-    // Check if 'use strict' is already present
+    const body = root.get(
+      'program',
+      'body',
+    ) as ASTPath<Program>['value']['body'];
+    const firstStatement = body[0];
     if (
-      topLevelStatements.length === 0 ||
+      body.length === 0 ||
       !(
-        topLevelStatements[0].type === 'ExpressionStatement' &&
-        topLevelStatements[0].expression.value === 'use strict'
+        firstStatement?.type === 'ExpressionStatement' &&
+        (firstStatement.expression as Literal).value === 'use strict'
       )
     ) {
-      // Add 'use strict' as the first statement
-      root
-        .get('program', 'body')
-        .unshift(j.expressionStatement(j.literal('use strict')));
+      body.unshift(j.expressionStatement(j.literal('use strict')));
     }
   }
 
   return root.toSource();
-};
+}
+
+export default transformer satisfies jscodeshift.Transform;
