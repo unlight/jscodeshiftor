@@ -1,8 +1,6 @@
 import { ok } from 'node:assert';
 
-import jscodeshift from 'jscodeshift';
-
-import { describe, printCode } from './testing';
+import jscodeshift, { type ASTPath } from 'jscodeshift';
 
 import type { ExportSpecifier } from './types.ts';
 
@@ -32,7 +30,10 @@ export default <jscodeshift.Transform>function (file, api) {
 
     j(path)
       .find(j.VariableDeclarator)
-      .filter(path => path.parent.value === declaration)
+      .filter(path => {
+        const parent = path.parent as ASTPath;
+        return parent.value === declaration;
+      })
       .forEach(path => {
         if (path.value.id.type === 'Identifier') {
           exportNames.push(path.value.id.name);
@@ -59,7 +60,11 @@ export default <jscodeshift.Transform>function (file, api) {
     }
 
     // Remove export keyword
-    path.replace(declaration as any);
+    if (declaration) {
+      path.replace(declaration);
+    } else {
+      path.prune();
+    }
   }
 
   const exportNamedDeclaration = j.exportNamedDeclaration(
@@ -83,8 +88,8 @@ export default <jscodeshift.Transform>function (file, api) {
 
   const exportDefaultDeclaration = root.find(j.ExportDefaultDeclaration);
 
-  const program: jscodeshift.Program = root.get().node.program;
-  program.body.push('\n' as any);
+  const program = (root.get() as ASTPath<jscodeshift.File>).node.program;
+  program.body.push('\n' as unknown as (typeof program.body)[number]);
 
   const exportDefault = exportDefaultDeclaration.nodes();
 

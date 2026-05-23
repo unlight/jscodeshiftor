@@ -1,4 +1,4 @@
-import { Transform } from 'jscodeshift';
+import { type Transform } from 'jscodeshift';
 
 import { getNodeStart } from './utils.ts';
 
@@ -10,7 +10,9 @@ const transform: Transform = (file, api) => {
   const objectPaths = j(source)
     .find(j.ObjectExpression)
     .paths()
-    .sort((a, b) => (getNodeStart(b.node) || 0) - (getNodeStart(a.node) || 0));
+    .toSorted(
+      (a, b) => (getNodeStart(b.node) || 0) - (getNodeStart(a.node) || 0),
+    );
 
   let modifiedSource = source;
 
@@ -50,7 +52,10 @@ const transform: Transform = (file, api) => {
   return modifiedSource;
 };
 
-function formatObject(source: string, loc: any): string | null {
+function formatObject(
+  source: string,
+  loc: { start: { line: number }; end: { line: number } },
+): string | null {
   const lines = source.split('\n');
   const startLine = loc.start.line - 1;
   const endLine = loc.end.line - 1;
@@ -64,7 +69,6 @@ function formatObject(source: string, loc: any): string | null {
   let braceDepth = 0;
   const resultLines: string[] = [];
   let propertyBuffer: string[] = [];
-  let inTopLevelProperty = false;
 
   for (const line of objectLines) {
     const trimmed = line.trim();
@@ -74,9 +78,7 @@ function formatObject(source: string, loc: any): string | null {
     braceDepth -= (line.match(/}/g) || []).length;
 
     if (braceDepth === 1 && trimmed !== '') {
-      // We're in a top-level property line
       propertyBuffer.push(line);
-      inTopLevelProperty = true;
     } else if (braceDepth === 1 && trimmed === '') {
       // Top-level empty line - skip it (removes extra line breaks)
       if (propertyBuffer.length > 0) {

@@ -46,11 +46,6 @@ function iterateObjectExpression({
     .filter(p => p.value.computed === false)
     .paths()) {
     const identifier = getIdentifierValue(property);
-    // console.log({
-    //     identifier,
-    //     toSource: j(property).toSource(),
-    //     parent: j(property.parent).toSource(),
-    // });
     const count =
       identifierNodes(identifier).size() + literalNodes(identifier).size();
     if (count > 1) {

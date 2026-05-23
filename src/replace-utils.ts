@@ -1,14 +1,13 @@
 import assert from 'node:assert';
 
 import jscodeshift, {
-  Collection,
-  JSCodeshift,
-  VariableDeclarator,
+  type ASTPath,
+  type Collection,
+  type JSCodeshift,
+  type VariableDeclarator,
 } from 'jscodeshift';
 
-import { code } from './testing';
-
-export default <jscodeshift.Transform>function (file, api, options) {
+export default <jscodeshift.Transform>function (file, api) {
   const j = api.jscodeshift;
   const root = j(file.source);
 
@@ -38,7 +37,8 @@ export default <jscodeshift.Transform>function (file, api, options) {
     }
 
     if (args[0]?.['value'] === '@flow/utils') {
-      const variableDeclarator: VariableDeclarator = path.parent.value;
+      const variableDeclarator = (path.parent as ASTPath)
+        .value as VariableDeclarator;
       const name =
         variableDeclarator.id?.type === 'Identifier' &&
         variableDeclarator.id.name;
@@ -117,7 +117,13 @@ function findImports(args: { name: string; root: Collection; j: JSCodeshift }) {
     .find(j.VariableDeclarator, {
       init: { name, type: 'Identifier' },
     })
-    .filter(p => p.parent?.parent?.value?.type === 'Program')
+    .filter(p => {
+      return (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        (p.parent?.parent?.value as { type?: string } | undefined)?.type ===
+        'Program'
+      );
+    })
     .paths()) {
     // Declaration
     if (path.node.id.type === 'ObjectPattern') {

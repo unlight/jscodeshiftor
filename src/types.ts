@@ -1,4 +1,5 @@
 import type { ESLint } from 'eslint';
+import type jscodeshift from 'jscodeshift';
 
 export type LintResult = Awaited<ReturnType<ESLint['lintText']>>;
 export type LintMessage = LintResult[number]['messages'][number];
@@ -49,4 +50,4 @@ export type File = {
   source: string;
 };
 
-export type ExportSpecifier = any;
+export type ExportSpecifier = jscodeshift.ExportSpecifier;
