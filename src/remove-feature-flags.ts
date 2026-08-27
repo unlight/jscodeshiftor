@@ -99,22 +99,68 @@ export default <jscodeshift.Transform>(
         }
       }
 
-      // Logical expressions - only evaluate if we can determine the left side
       if (j.LogicalExpression.check(node)) {
         const leftResult = evaluateCondition(node.left);
+        const rightResult = evaluateCondition(node.right);
         const { operator } = node;
 
         if (operator === '&&') {
-          if (leftResult === false) return false;
-          if (leftResult === true) return evaluateCondition(node.right);
+          if (leftResult === false || rightResult === false) return false;
+          if (leftResult === true) return rightResult;
+          if (rightResult === true) return leftResult;
         } else if (operator === '||') {
-          if (leftResult === true) return true;
-          if (leftResult === false) return evaluateCondition(node.right);
+          if (leftResult === true || rightResult === true) return true;
+          if (leftResult === false) return rightResult;
+          if (rightResult === false) return leftResult;
         }
       }
 
       return null;
     };
+
+    // Transform logical expressions before if/ternary so X && flag simplifies to X
+    root.find(j.LogicalExpression).forEach(path => {
+      const leftResult = evaluateCondition(path.value.left);
+      const rightResult = evaluateCondition(path.value.right);
+      const { operator } = path.value;
+
+      if (operator === '&&') {
+        if (leftResult === true) {
+          // flag && expression -> expression
+          path.replace(path.value.right);
+        } else if (leftResult === false) {
+          // false && expression -> false
+          path.replace(j.booleanLiteral(false));
+        } else if (rightResult === true) {
+          // X && flag(true) -> X
+          if (path.parent) {
+            const parent = path.parent as { node: unknown };
+            const parentNode = parent.node;
+            if (j.LogicalExpression.check(parentNode)) {
+              parentNode.left = path.value.left;
+            } else {
+              path.replace(path.value.left);
+            }
+          } else {
+            path.replace(path.value.left);
+          }
+        } else if (rightResult === false) {
+          path.replace(j.booleanLiteral(false));
+        }
+      } else if (operator === '||') {
+        if (leftResult === true) {
+          path.replace(j.booleanLiteral(true));
+        } else if (leftResult === false) {
+          // false || expression -> expression
+          path.replace(path.value.right);
+        } else if (rightResult === true) {
+          path.replace(j.booleanLiteral(true));
+        } else if (rightResult === false) {
+          // X || flag(false?) — flag is always true so this is X || false -> X
+          path.replace(path.value.left);
+        }
+      }
+    });
 
     // Transform if statements
     root.find(j.IfStatement).forEach(path => {
@@ -162,41 +208,6 @@ export default <jscodeshift.Transform>(
         path.replace(path.value.consequent);
       } else if (testResult === false) {
         path.replace(path.value.alternate);
-      }
-    });
-
-    // Transform logical expressions
-    root.find(j.LogicalExpression).forEach(path => {
-      const leftResult = evaluateCondition(path.value.left);
-      const rightResult = evaluateCondition(path.value.right);
-      const { operator } = path.value;
-
-      if (operator === '&&') {
-        if (leftResult === true) {
-          // flag && expression -> expression
-          path.replace(path.value.right);
-
-          // path.node.right.properties; // 1
-          // path.parentPath.node; // is object expre 1.5 is spread
-          // path.parentPath.parentPath.node; // is object expre 2
-        } else if (leftResult === false) {
-          // false && expression -> false
-          path.replace(j.booleanLiteral(false));
-        } else if (rightResult === true && path.parent) {
-          const parent = path.parent as { node: unknown };
-          const parentNode = parent.node;
-          if (j.LogicalExpression.check(parentNode)) {
-            parentNode.left = path.value.left;
-          }
-        }
-      } else if (operator === '||') {
-        if (leftResult === true) {
-          // flag || expression -> flag (always true)
-          path.replace(path.value.left);
-        } else if (leftResult === false) {
-          // false || expression -> expression
-          path.replace(path.value.right);
-        }
       }
     });
 

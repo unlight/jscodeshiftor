@@ -27,6 +27,17 @@ it('transforms if statements with negation', () => {
   expect(result).toBe('execute()');
 });
 
+it('flag in second operand in if', () => {
+  const source = 'if (isProd && FF_1234_STORY) { go() }';
+  const result = applyTransform(
+    removeFeatureFlags,
+    { flags: ['FF_1234_STORY'] },
+    { source },
+  );
+
+  expect(result).toBe('if (isProd) { go() }');
+});
+
 it('transforms ternary expressions', () => {
   const source = dedent(`
       const a = context.FF_1234_STORY ? truthy : falsy;
