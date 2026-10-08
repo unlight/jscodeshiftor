@@ -42,6 +42,7 @@ export default defineConfig(
       'unicorn/no-array-method-this-argument': 0,
       'unicorn/no-null': 0,
       'unicorn/prevent-abbreviations': 0,
+      'unicorn/name-replacements': 0,
     },
   },
   {

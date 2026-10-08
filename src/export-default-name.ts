@@ -3,9 +3,23 @@ import namify from 'namify';
 
 import { getTopLevelVarNames, withComments } from './utils';
 
-import type { VariableDeclaration } from 'jscodeshift';
+import type {
+  ArrowFunctionExpression,
+  CallExpression,
+  ExportDefaultDeclaration,
+  Literal,
+  VariableDeclaration,
+} from 'jscodeshift';
 
 const toValidName = namify as (s: string) => string;
+
+function isValueDeclaration(
+  declaration: ExportDefaultDeclaration['declaration'],
+): declaration is Literal | ArrowFunctionExpression | CallExpression {
+  return ['Literal', 'ArrowFunctionExpression', 'CallExpression'].includes(
+    declaration.type,
+  );
+}
 
 export default <jscodeshift.Transform>function (file, api) {
   const j = api.jscodeshift;
@@ -50,41 +64,28 @@ export default <jscodeshift.Transform>function (file, api) {
 
       path.replace(declaration);
       path.insertAfter(defaultDeclaration(name));
-    }
+    } else if (isValueDeclaration(declaration)) {
+      const identifier = j.identifier(getDefaultUniqueName());
+      const declarator = j.variableDeclarator(identifier, declaration);
+      const variableDeclaration = j.variableDeclaration('const', [declarator]);
 
-    if (
-      declaration.type === 'Literal' ||
-      declaration.type === 'ArrowFunctionExpression' ||
-      declaration.type === 'CallExpression'
-    ) {
       path.replace(
-        withComments(
-          j.variableDeclaration('const', [
-            j.variableDeclarator(
-              j.identifier(getDefaultUniqueName()),
-              declaration,
-            ),
-          ]),
-          node,
-        ) as VariableDeclaration,
+        withComments(variableDeclaration, node) as VariableDeclaration,
       );
-
       path.insertAfter(defaultDeclaration());
-    }
-
-    if (
+    } else if (
       declaration.type === 'AssignmentExpression' &&
       declaration.left.type === 'Identifier'
     ) {
-      path.replace(
-        withComments(
-          j.variableDeclaration('const', [
-            j.variableDeclarator(declaration.left, declaration.right),
-          ]),
-          node,
-        ) as VariableDeclaration,
+      const declarator = j.variableDeclarator(
+        declaration.left,
+        declaration.right,
       );
+      const variableDeclaration = j.variableDeclaration('const', [declarator]);
 
+      path.replace(
+        withComments(variableDeclaration, node) as VariableDeclaration,
+      );
       path.insertAfter(defaultDeclaration(declaration.left.name));
     }
   }

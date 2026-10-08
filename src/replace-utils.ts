@@ -71,15 +71,17 @@ export default <jscodeshift.Transform>function (file, api) {
       source: { value: '@flow/utils' },
     })
     .paths()) {
-    if (path.value.specifiers?.length === 1) {
-      const specifier = path.value.specifiers[0];
-      if (specifier?.type === 'ImportDefaultSpecifier') {
-        const name = specifier.local?.name;
-        assert.ok(name);
-        path.value.specifiers[0] = j.importNamespaceSpecifier(
-          j.identifier(name as string),
-        );
-      }
+    if (path.value.specifiers?.length !== 1) {
+      continue;
+    }
+
+    const specifier = path.value.specifiers[0];
+    if (specifier?.type === 'ImportDefaultSpecifier') {
+      const name = specifier.local?.name;
+      assert.ok(name);
+      path.value.specifiers[0] = j.importNamespaceSpecifier(
+        j.identifier(name as string),
+      );
     }
   }
 
@@ -126,18 +128,20 @@ function findImports(args: { name: string; root: Collection; j: JSCodeshift }) {
     })
     .paths()) {
     // Declaration
-    if (path.node.id.type === 'ObjectPattern') {
-      for (const p of path.node.id.properties) {
-        if (
-          p.type === 'Property' &&
-          p.key.type === 'Identifier' &&
-          p.value.type === 'Identifier'
-        ) {
-          importNames[p.key.name] = p.value.name;
-        }
-      }
-      path.prune();
+    if (path.node.id.type !== 'ObjectPattern') {
+      continue;
     }
+
+    for (const p of path.node.id.properties) {
+      if (
+        p.type === 'Property' &&
+        p.key.type === 'Identifier' &&
+        p.value.type === 'Identifier'
+      ) {
+        importNames[p.key.name] = p.value.name;
+      }
+    }
+    path.prune();
   }
 
   for (const path of root

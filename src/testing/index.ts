@@ -4,7 +4,7 @@ import { print } from 'recast';
 import type { File } from '../types.ts';
 
 export function printCode(...args: unknown[]) {
-  args.forEach(arg => console.log(code(arg)));
+  for (const arg of args) console.log(code(arg));
 }
 
 export function code(ast: unknown) {

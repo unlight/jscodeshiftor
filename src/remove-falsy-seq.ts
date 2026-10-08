@@ -18,7 +18,7 @@ export default <jscodeshift.Transform>function (file, api) {
   const seqName = seqImports[0];
   if (!seqName) return file.source;
 
-  root
+  const falseArguments = root
     .find(j.CallExpression, { callee: { type: 'Identifier' } })
     .filter(
       path =>
@@ -33,11 +33,12 @@ export default <jscodeshift.Transform>function (file, api) {
     )
     .filter(
       (argPath: ASTPath) =>
-        j.BooleanLiteral.check(argPath.node) && argPath.node.value === false,
-    )
-    .forEach((argPath: ASTPath) => {
-      argPath.prune();
-    });
+        j.BooleanLiteral.check(argPath.node) && !argPath.node.value,
+    );
+
+  for (const argPath of falseArguments) {
+    argPath.prune();
+  }
 
   return root.toSource({
     lineTerminator: '\n',

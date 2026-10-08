@@ -40,11 +40,13 @@ function iterateObjectExpression({
       })
       .filter(p => p.parent === objectExpression);
 
-  for (const property of j(objectExpression)
+  const properties = j(objectExpression)
     .find(j.Property)
     .filter(p => p.parent === objectExpression)
     .filter(p => p.value.computed === false)
-    .paths()) {
+    .paths();
+
+  for (const property of properties) {
     const identifier = getIdentifierValue(property);
     const count =
       identifierNodes(identifier).size() + literalNodes(identifier).size();

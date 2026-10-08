@@ -37,12 +37,9 @@ export default <jscodeshift.Transform>function (file, api) {
       .forEach(path => {
         if (path.value.id.type === 'Identifier') {
           exportNames.push(path.value.id.name);
-        }
-        if (path.value.id.type === 'ObjectPattern') {
-          for (const p of path.value.id.properties.filter(
-            p => p.type === 'Property',
-          )) {
-            if (p.value.type === 'Identifier') {
+        } else if (path.value.id.type === 'ObjectPattern') {
+          for (const p of path.value.id.properties) {
+            if (p.type === 'Property' && p.value.type === 'Identifier') {
               exportNames.push(p.value.name);
             }
           }
