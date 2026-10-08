@@ -49,6 +49,11 @@ export default <jscodeshift.Transform>(
     const evaluateCondition = (node: unknown): boolean | null => {
       if (!node) return null;
 
+      // Constant boolean: true/false (needed after earlier folding, e.g. false ? a : b)
+      if (j.BooleanLiteral.check(node)) {
+        return node.value;
+      }
+
       // Direct feature flag access: flag
       if (isFeatureFlag(node)) {
         return true;

@@ -1,6 +1,6 @@
 import { applyTransform } from 'jscodeshift/src/testUtils';
 import { dedent } from 'strip-indent';
-import { it, expect } from 'vitest';
+import { it, expect, describe } from 'vitest';
 
 import removeFeatureFlags from './remove-feature-flags';
 import { runTransform } from './testing';
@@ -504,4 +504,26 @@ it('feature flag between condition 2', () => {
   );
 
   expect(result).toBe(expected);
+});
+
+describe('false flag in condition', () => {
+  it('ternary condition', () => {
+    const source = `[...(any && !FF_12_AA ? [no] : [yes])]`;
+    const result = applyTransform(
+      { default: removeFeatureFlags, parser: 'ts' },
+      { flags: ['FF_12_AA'] },
+      { source },
+    );
+    expect(result).toEqual('[yes]');
+  });
+
+  it('if condition', () => {
+    const source = `if (any && !FF_12_AA) no(); else yes();`;
+    const result = applyTransform(
+      { default: removeFeatureFlags, parser: 'ts' },
+      { flags: ['FF_12_AA'] },
+      { source },
+    );
+    expect(result).toEqual('yes();');
+  });
 });
