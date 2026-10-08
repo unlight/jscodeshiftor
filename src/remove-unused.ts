@@ -177,7 +177,7 @@ function getNoUnusedVars(files: string[]) {
       encoding: 'utf8',
     });
   } catch (error) {
-    output = (error as ExecException).stdout || '';
+    output = String((error as ExecException).stdout ?? '');
   }
 
   try {
