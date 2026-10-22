@@ -211,3 +211,30 @@ export async function get(ids) {
   return 1;
 }`);
 });
+
+it('remove unused from destructured function args', () => {
+  const source = [
+    'export async function update({ a, b, c }) {',
+    '  console.log(a, c);',
+    '}',
+  ].join('\n');
+  const getNoUnusedVars = createGetNoUnusedVars({
+    ruleId: 'unused-imports/no-unused-vars',
+    severity: 2,
+    message:
+      "'b' is defined but never used. Allowed unused args must match /^_/u.",
+    line: 1,
+    column: 35,
+    messageId: 'unusedVar',
+    endLine: 1,
+    endColumn: 36,
+  });
+  const result = applyTransform(
+    { default: removeUnusedVars, parser: 'ts' },
+    { getNoUnusedVars },
+    { source },
+  );
+  expect(result.replaceAll(/\s+/g, ' ').trim()).toBe(
+    'export async function update({ a, c }) { console.log(a, c); }',
+  );
+});

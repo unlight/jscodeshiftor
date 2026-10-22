@@ -35,19 +35,20 @@ export default <jscodeshift.Transform>(
           const { node } = path;
 
           if (j.ObjectPattern.check(node.id)) {
-            node.id.properties = node.id.properties.filter(prop => {
-              const shouldRemove =
-                'value' in prop &&
-                j.Identifier.check(prop.value) &&
-                isMatchVariable(prop.value, unused);
-
-              return !shouldRemove;
-            });
+            removeUnusedObjectPatternProperties(j, node.id, unused);
           } else if (
             j.Identifier.check(node.id) &&
             isMatchVariable(node.id, unused)
           ) {
             path.prune();
+          }
+        });
+
+        root.find(j.Function).forEach(path => {
+          for (const param of path.node.params) {
+            if (j.ObjectPattern.check(param)) {
+              removeUnusedObjectPatternProperties(j, param, unused);
+            }
           }
         });
 
@@ -77,9 +78,8 @@ export default <jscodeshift.Transform>(
         });
 
         // Keep only the top‑most nodes (i.e., remove children if parent is already in the set)
-        const topPaths = insidePaths.filter(
-          (p, i) =>
-            !insidePaths.some((other, j) => i !== j && isParentOf(other, p)),
+        const topPaths = insidePaths.filter((p, i) =>
+          insidePaths.every((other, j) => i === j || !isParentOf(other, p)),
         );
 
         // Remove them in reverse source order (safest for multiple removals)
@@ -187,6 +187,21 @@ function getNoUnusedVars(files: string[]) {
 
     throw error;
   }
+}
+
+function removeUnusedObjectPatternProperties(
+  j: jscodeshift.JSCodeshift,
+  pattern: jscodeshift.ObjectPattern,
+  unused: Unused,
+) {
+  pattern.properties = pattern.properties.filter(prop => {
+    const shouldRemove =
+      'value' in prop &&
+      j.Identifier.check(prop.value) &&
+      isMatchVariable(prop.value, unused);
+
+    return !shouldRemove;
+  });
 }
 
 function isMatchVariable(node: Identifier | null, unused: Unused) {
